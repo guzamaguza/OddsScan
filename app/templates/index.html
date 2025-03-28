@@ -13,7 +13,7 @@
     <ul>
         {% for event in events %}
             <li>
-                <a href="{{ url_for('show_plot', event_id=event['event_id']) }}">
+                <a href="{{ url_for('main.show_plot', event_id=event['event_id']) }}">
                     {{ event['home_team'] }} vs {{ event['away_team'] }}
                 </a>
             </li>
