@@ -8,16 +8,17 @@
 <body>
     <h1>Welcome to the Odds Tracking App</h1>
     <p>Select a match to view odds plots:</p>
-
+    
+    <!-- Add a list of events here -->
     <ul>
         {% for event in events %}
             <li>
-                {{ event[1] }} vs {{ event[2] }} 
-                <a href="{{ url_for('main.plot_odds', event_id=event[0]) }}">
-                    <button>View Plot</button>
+                <a href="{{ url_for('show_plot', event_id=event['event_id']) }}">
+                    {{ event['home_team'] }} vs {{ event['away_team'] }}
                 </a>
             </li>
         {% endfor %}
     </ul>
+
 </body>
 </html>
