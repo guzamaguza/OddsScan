@@ -1,4 +1,5 @@
 from flask import Flask
+from your_blueprint_file import main  # Adjust the import path to your Blueprint file
 
 def create_app():
     app = Flask(__name__)
@@ -8,3 +9,5 @@ def create_app():
     app.register_blueprint(main)
 
     return app
+
+
