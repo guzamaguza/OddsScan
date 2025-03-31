@@ -8,17 +8,21 @@
 </head>
 <body>
     <h1>Welcome to the Odds Tracking App</h1>
+
+    {% if no_new_data %}
+        <p style="color: red;">No new odds data available at the moment. Try again later.</p>
+    {% endif %}
+
     <h2>Select a match to view odds plots:</h2>
     <ul>
         {% for event in events %}
             <li>
                 <a href="{{ url_for('main.show_plot', event_id=event.event_id) }}">
-                    {{ event.home_team }} vs {{ event.away_team }}
-                </a> - {{ event.start_time }}
+                    {{ event.home_team }} vs {{ event.away_team }} - {{ event.start_time }}
+                </a>
             </li>
         {% endfor %}
     </ul>
 </body>
 </html>
-    
-</html>
+
