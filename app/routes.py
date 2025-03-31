@@ -12,12 +12,16 @@ main = Blueprint('main', __name__)
 def home():
     # Fetch events from the database
     conn = sqlite3.connect('odds.db')
-    query = "SELECT DISTINCT event_id, home_team, away_team FROM odds"
-    events = pd.read_sql_query(query, conn).to_dict(orient='records')
+    query = "SELECT DISTINCT event_id, home_team, away_team, start_time FROM odds"
+    events = pd.read_sql_query(query, conn)
     conn.close()
 
-    # Pass the events to the template
-    return render_template("index.html", events=events)
+    # Convert start_time to a readable format
+    events['start_time'] = pd.to_datetime(events['start_time']).dt.strftime('%Y-%m-%d %H:%M')
+
+    # Pass the events as a list of dictionaries
+    return render_template("index.html", events=events.to_dict(orient='records'))
+
 
 # Route to show odds plot
 @main.route('/plot/<event_id>')
