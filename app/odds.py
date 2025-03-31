@@ -56,7 +56,7 @@ def fetch_and_store_odds(url, odds_type):
 
         if not data:
             print(f"No {odds_type} data returned from API.")
-            return
+            return False
 
         rows = []
         for event in data:
@@ -71,11 +71,9 @@ def fetch_and_store_odds(url, odds_type):
                 for market in bookmaker.get('markets', []):
                     market_key = market.get('key', 'N/A')
                     for outcome in market.get('outcomes', []):
-                        rows.append((
-                            event_id, home_team, away_team, commence_time, bookmaker_name,
-                            market_key, outcome.get('name', 'N/A'), outcome.get('price', 'N/A'),
-                            outcome.get('point', 'N/A'), timestamp, odds_type
-                        ))
+                        rows.append((event_id, home_team, away_team, commence_time, bookmaker_name,
+                                     market_key, outcome.get('name', 'N/A'), outcome.get('price', 'N/A'),
+                                     outcome.get('point', 'N/A'), timestamp, odds_type))
 
         if rows:
             conn = sqlite3.connect(DB_NAME)
@@ -87,10 +85,13 @@ def fetch_and_store_odds(url, odds_type):
             conn.commit()
             conn.close()
             print(f"{odds_type} odds data successfully stored.")
+            return True
+
+        return False
 
     except requests.exceptions.RequestException as req_err:
         print(f"Error fetching {odds_type} data: {req_err}")
-
+        return False
 
 # Function to Plot Odds and Return as Image URL
 def plot_odds(event_id):
