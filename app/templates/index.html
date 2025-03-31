@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,18 +8,17 @@
 </head>
 <body>
     <h1>Welcome to the Odds Tracking App</h1>
-    <p>Select a match to view odds plots:</p>
-    
-    <!-- Add a list of events here -->
+    <h2>Select a match to view odds plots:</h2>
     <ul>
         {% for event in events %}
             <li>
-                <a href="{{ url_for('main.show_plot', event_id=event['event_id']) }}">
-                    {{ event['home_team'] }} vs {{ event['away_team'] }}
-                </a>
+                <a href="{{ url_for('main.show_plot', event_id=event.event_id) }}">
+                    {{ event.home_team }} vs {{ event.away_team }}
+                </a> - {{ event.start_time }}
             </li>
         {% endfor %}
     </ul>
-
 </body>
+</html>
+    
 </html>
