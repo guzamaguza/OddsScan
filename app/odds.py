@@ -153,9 +153,19 @@ def home():
 
 @app.route('/fetch_odds')
 def fetch_odds():
-    fetch_and_store_odds(PRE_EVENT_URL, "Pre-event")
-    fetch_and_store_odds(LIVE_URL, "Live")
-    return jsonify({"message": "Odds fetched and stored successfully"})
+    pre_event_updated = fetch_and_store_odds(PRE_EVENT_URL, "Pre-event")
+    live_updated = fetch_and_store_odds(LIVE_URL, "Live")
+
+    no_new_data = not (pre_event_updated or live_updated)  # True if no new data added
+
+    # Fetch events again for display
+    conn = sqlite3.connect(DB_NAME)
+    query = "SELECT DISTINCT event_id, home_team, away_team, start_time FROM odds"
+    events = pd.read_sql_query(query, conn).to_dict(orient='records')
+    conn.close()
+
+    return render_template("index.html", events=events, no_new_data=no_new_data)
+
 
 
 @app.route('/plot/<event_id>')
