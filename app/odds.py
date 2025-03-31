@@ -103,26 +103,33 @@ def plot_odds(event_id):
     """
     df = pd.read_sql_query(query, conn, params=(event_id,))
     conn.close()
-    
+
     if df.empty:
         return None
-    
+
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df['start_time'] = pd.to_datetime(df['start_time'])
     event_start_time = df['start_time'].iloc[0]
-    
+
     home_team = df['home_team'].iloc[0]
     away_team = df['away_team'].iloc[0]
-    
+
     plt.figure(figsize=(12, 6))
+
+    # Plot odds for the home team
     for bookmaker in df['bookmaker'].unique():
-        subset = df[(df['outcome'] == home_team) & (df['bookmaker'] == bookmaker)]
-        plt.plot(subset['timestamp'], subset['price'], marker='o', label=f"{bookmaker} (Home)")
-    
+        subset_home = df[(df['outcome'] == home_team) & (df['bookmaker'] == bookmaker)]
+        if not subset_home.empty:
+            plt.plot(subset_home['timestamp'], subset_home['price'], marker='o', label=f"{bookmaker} (Home)")
+
+        subset_away = df[(df['outcome'] == away_team) & (df['bookmaker'] == bookmaker)]
+        if not subset_away.empty:
+            plt.plot(subset_away['timestamp'], subset_away['price'], marker='s', linestyle='dashed', label=f"{bookmaker} (Away)")
+
     plt.axvline(event_start_time, color='r', linestyle='--', label='Event Start Time')
     plt.xlabel('Time')
     plt.ylabel('Odds')
-    plt.title(f"Home Team Odds Over Time: {home_team} vs {away_team}")
+    plt.title(f"Odds Over Time: {home_team} vs {away_team}")
     plt.legend()
     plt.xticks(rotation=45)
     plt.grid()
