@@ -77,7 +77,13 @@ def plot_odds(event_id):
 
     return img_base64
 
-
+@app.route("/init-db")
+def init_db():
+    try:
+        db.create_all()
+        return {"status": "success", "message": "Tables created successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.route("/test-db")
 def test_db():
