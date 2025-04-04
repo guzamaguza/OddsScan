@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, current_app
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -95,11 +95,10 @@ def test_db():
         return {"status": "error", "message": str(e)}
 
 
-
 @main.route('/fetch_odds')
 def fetch_odds():
     """Fetch and store odds."""
-    API_KEY = app.config['ODDS_API_KEY']
+    API_KEY = current_app.config['ODDS_API_KEY']  # Use current_app to access config
     SPORT = 'basketball_nba'
     REGION = 'us'
     MARKETS = 'h2h,spreads,totals'
@@ -115,5 +114,4 @@ def fetch_odds():
     return {
         "pre_event_updated": pre_event_updated,
         "live_updated": live_updated
-    }
 
