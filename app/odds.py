@@ -10,6 +10,9 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from models import db, Odds  # Import models
+from flask import current_app
+
+
 
 # Flask App Initialization
 app = Flask(__name__)
@@ -18,7 +21,7 @@ app.config.from_object(Config)
 db.init_app(app)  # Initialize PostgreSQL
 
 # Constants
-API_KEY = os.getenv('ODDS_API_KEY')
+API_KEY = current_app.config['ODDS_API_KEY']
 SPORT = 'basketball_nba'
 REGION = 'us'
 MARKETS = 'h2h,spreads,totals'
@@ -87,6 +90,9 @@ def fetch_odds():
     pre_event_updated = fetch_and_store_odds(PRE_EVENT_URL, "Pre-event")
     live_updated = fetch_and_store_odds(LIVE_URL, "Live")
     return {"pre_event_updated": pre_event_updated, "live_updated": live_updated}
+
+
+
 
 # Run Flask App
 if __name__ == '__main__':
