@@ -8,9 +8,19 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from flask import Flask, render_template, request, jsonify
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
 
 # Flask App Initialization
 app = Flask(__name__)
+
+app.config.from_object(Config)  # Load settings from config.py
+
+db = SQLAlchemy(app)  # Initialize database
+
+with app.app_context():
+    db.create_all()  # Create tables if they don’t exist
 
 # Constants
 API_KEY = '8781b066fc9a11b5d2c6eb6a16d7af43'  # Replace with your Odds API key
