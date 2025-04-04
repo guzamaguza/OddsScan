@@ -18,7 +18,7 @@ app.config.from_object(Config)
 db.init_app(app)  # Initialize PostgreSQL
 
 # Constants
-API_KEY = 'your_odds_api_key'  # Replace with actual API key
+API_KEY = 'ODDS_API_KEY'  # Replace with actual API key
 SPORT = 'basketball_nba'
 REGION = 'us'
 MARKETS = 'h2h,spreads,totals'
