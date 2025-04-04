@@ -2,5 +2,4 @@ Flask
 gunicorn
 pandas
 matplotlib
-
-pip freeze > requirements.txt
+flask_sqlalchemy
