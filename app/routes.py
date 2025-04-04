@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import io
 import base64
+from app import db
 
 # Define the Blueprint
 main = Blueprint('main', __name__)
@@ -77,13 +78,13 @@ def plot_odds(event_id):
 
     return img_base64
 
-@app.route("/init-db")
+
+@main.route("/init-db")
 def init_db():
-    try:
-        db.create_all()
-        return {"status": "success", "message": "Tables created successfully"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    # Your initialization logic here
+    db.create_all()
+    return "Database initialized"
+
 
 @app.route("/test-db")
 def test_db():
