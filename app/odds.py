@@ -19,8 +19,6 @@ app.config.from_object(Config)  # Load settings from config.py
 
 db = SQLAlchemy(app)  # Initialize database
 
-with app.app_context():
-    db.create_all()  # Create tables if they don’t exist
 
 # Constants
 API_KEY = '8781b066fc9a11b5d2c6eb6a16d7af43'  # Replace with your Odds API key
