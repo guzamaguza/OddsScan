@@ -187,6 +187,25 @@ def show_plot(event_id):
         return "No data found for the selected match."
 
 
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+db = SQLAlchemy(app)
+
+# Test the connection
+with app.app_context():
+    try:
+        result = db.session.execute("SELECT 1")
+        print("✅ Database connection successful:", result.fetchone())
+    except Exception as e:
+        print("❌ Database connection failed:", str(e))
+
+
+
 # Run Flask App
 if __name__ == '__main__':
     create_database()
