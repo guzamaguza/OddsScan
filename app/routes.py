@@ -9,93 +9,31 @@ from app.odds import fetch_and_store_odds  # Import the function correctly
 # Define the Blueprint
 main = Blueprint('main', __name__)
 
-# Home route to show events
+from flask import Blueprint, render_template
+from app.odds import fetch_events, plot_odds  # Import functions from odds.py
+
+# Define the Blueprint
+main = Blueprint('main', __name__)
+
 @main.route('/')
 def home():
-    # Query events from the database using SQLAlchemy (instead of sqlite3)
-    events = db.session.query(Event.id, Event.name).all()  # Use SQLAlchemy for querying the Event model
-    events_list = [{"id": event.id, "name": event.name} for event in events]
+    # Fetch events from the database using the fetch_events function
+    events = fetch_events()
 
     # Pass the events to the template
-    return render_template("index.html", events=events_list)
-
+    return render_template("index.html", events=events)
 
 # Route to show odds plot
 @main.route('/plot/<event_id>')
 def show_plot(event_id):
-    img_base64 = plot_odds(event_id)  # Function that generates the plot
+    # Generate the odds plot using the plot_odds function
+    img_base64 = plot_odds(event_id)
+    
+    # If a plot is returned, show it; otherwise, show a message
     if img_base64:
         return render_template('plot.html', img_data=img_base64)
     else:
         return "No data found for the selected match."
-
-
-# Function to generate and return plot as base64
-def plot_odds(event_id):
-    # Query odds data using SQLAlchemy instead of sqlite3
-    query = db.session.query(Odds).filter_by(event_id=event_id).order_by(Odds.time).all()
-    df = pd.DataFrame([{
-        "home_team": odds.event.home_team,  # Assuming you have related Event data
-        "away_team": odds.event.away_team,
-        "start_time": odds.event.start_time,
-        "outcome": odds.outcome,
-        "price": odds.odds_value,
-        "bookmaker": odds.bookmaker,
-        "timestamp": odds.timestamp
-    } for odds in query])
-
-    if df.empty:
-        return None
-
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df['start_time'] = pd.to_datetime(df['start_time'])
-    event_start_time = df['start_time'].iloc[0]
-
-    home_team = df['home_team'].iloc[0]
-    away_team = df['away_team'].iloc[0]
-
-    # Plotting the odds over time
-    plt.figure(figsize=(12, 6))
-    for bookmaker in df['bookmaker'].unique():
-        subset = df[(df['outcome'] == home_team) & (df['bookmaker'] == bookmaker)]
-        plt.plot(subset['timestamp'], subset['price'], marker='o', label=f"{bookmaker} (Home)")
-
-    plt.axvline(event_start_time, color='r', linestyle='--', label='Event Start Time')
-    plt.xlabel('Time')
-    plt.ylabel('Odds')
-    plt.title(f"Home Team Odds Over Time: {home_team} vs {away_team}")
-    plt.legend()
-    plt.xticks(rotation=45)
-    plt.grid()
-
-    # Save plot to buffer and encode as base64
-    img_buf = io.BytesIO()
-    plt.savefig(img_buf, format='png')
-    img_buf.seek(0)
-    img_base64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
-    plt.close()
-
-    return img_base64
-
-
-# Route to initialize the database
-@main.route("/init-db")
-def init_db():
-    # Initialize the database using SQLAlchemy
-    db.create_all()
-    return "Database initialized"
-
-
-# Route to test the database connection
-@main.route("/test-db")
-def test_db():
-    try:
-        # Testing database connection using SQLAlchemy
-        result = db.session.execute("SELECT 1")
-        return {"status": "success", "message": "Database connection successful", "result": result.fetchone()}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
 
 
 
