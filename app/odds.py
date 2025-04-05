@@ -24,22 +24,17 @@ app.config.from_object(Config)
 db.init_app(app)  # Initialize PostgreSQL
 
 
-
-
 # Function to generate and return odds plot as base64
 def plot_odds(event_id):
-    # Connect to the database
-    conn = sqlite3.connect('odds.db')
+    # Query data from PostgreSQL database using SQLAlchemy
     query = """
         SELECT home_team, away_team, start_time, outcome, price, bookmaker, timestamp
         FROM odds 
-        WHERE event_id = ?
+        WHERE event_id = :event_id
         ORDER BY timestamp
     """
-    df = pd.read_sql_query(query, conn, params=(event_id,))
-    conn.close()
+    df = pd.read_sql_query(query, db.session.bind, params={'event_id': event_id})
 
-    # If no data is found, return None
     if df.empty:
         return None
     
@@ -113,7 +108,7 @@ def fetch_and_store_odds(url, odds_type):
                             odds_value=float(outcome.get('price', 0))
                         ))
 
-        with app.app_context():
+        with current_app.app_context():
             db.session.bulk_save_objects(rows)
             db.session.commit()
             logging.info(f"{odds_type} odds data successfully stored.")
