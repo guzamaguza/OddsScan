@@ -1,7 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from app.config import Config
-
+from flask_migrate import Migrate
+import os
 
 db = SQLAlchemy()
 
@@ -16,6 +17,8 @@ def create_app():
     app.register_blueprint(main)
 
     return app
+
+
 
 
 
