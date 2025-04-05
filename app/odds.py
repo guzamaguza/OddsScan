@@ -4,7 +4,7 @@ import certifi
 from flask import Flask, render_template, request, jsonify, current_app
 from flask_sqlalchemy import SQLAlchemy
 from app.config import Config
-from models import db, Odds, Event  # Make sure to import Event
+from app.models import db, Odds, Event  # Make sure to import Event
 
 # Flask App Initialization
 app = Flask(__name__)
