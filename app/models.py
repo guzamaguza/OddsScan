@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
+from app import db
 # We do NOT create db here. It should be imported from app
 # from app import db  <-- You don't need to declare it again here, it's already initialized in app/__init__.py
 
