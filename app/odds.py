@@ -24,6 +24,11 @@ app.config.from_object(Config)
 db.init_app(app)  # Initialize PostgreSQL
 
 
+def fetch_events():
+    # Query the Event table to get all events
+    events = Event.query.all()
+    return events
+
 # Function to generate and return odds plot as base64
 def plot_odds(event_id):
     # Query data from PostgreSQL database using SQLAlchemy
