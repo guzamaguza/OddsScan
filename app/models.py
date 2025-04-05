@@ -24,3 +24,7 @@ class Odds(db.Model):
 
     def __repr__(self):
         return f'<Odds {self.odds_value}>'
+
+
+
+
