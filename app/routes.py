@@ -114,4 +114,5 @@ def fetch_odds():
     return {
         "pre_event_updated": pre_event_updated,
         "live_updated": live_updated
+    }
 
