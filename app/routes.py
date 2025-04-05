@@ -96,24 +96,5 @@ def test_db():
         return {"status": "error", "message": str(e)}
 
 
-@main.route('/fetch_odds')
-def fetch_odds():
-    """Fetch and store odds."""
-    API_KEY = current_app.config['ODDS_API_KEY']  # Use current_app to access config
-    SPORT = 'basketball_nba'
-    REGION = 'us'
-    MARKETS = 'h2h,spreads,totals'
-    
-    PRE_EVENT_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal'
-    LIVE_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal&eventStatus=live'
 
-    # Fetch and store pre-event and live odds
-    pre_event_updated = fetch_and_store_odds(PRE_EVENT_URL, "Pre-event")
-    live_updated = fetch_and_store_odds(LIVE_URL, "Live")
-
-    # Return the result
-    return {
-        "pre_event_updated": pre_event_updated,
-        "live_updated": live_updated
-    }
 
