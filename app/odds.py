@@ -80,9 +80,10 @@ def fetch_and_store_odds(url, odds_type):
         logging.info(f"Fetching {odds_type} data from URL: {url}")
         
         response = requests.get(url, verify=certifi.where())
-        response.raise_for_status()
+        response.raise_for_status()  # Raise an error if the response status code is not 200
         data = response.json()
 
+        # Check if the API returned data
         if not data:
             logging.error(f"No {odds_type} data returned from API.")
             return False
@@ -95,13 +96,21 @@ def fetch_and_store_odds(url, odds_type):
             commence_time = event.get('commence_time', 'N/A')
             timestamp = pd.Timestamp.now().isoformat()
 
-            # Check if the event already exists in the database, if not, create a new Event
+            # Check if the event already exists in the database
             existing_event = Event.query.filter_by(id=event_id).first()
             if not existing_event:
+                logging.info(f"Event with ID {event_id} not found in database. Creating new event.")
                 existing_event = Event(id=event_id, name=f'{home_team} vs {away_team}')
-                db.session.add(existing_event)
-                db.session.commit()  # Commit to get the event ID in DB
+                try:
+                    db.session.add(existing_event)
+                    db.session.commit()  # Commit to get the event ID in DB
+                    logging.info(f"Event {home_team} vs {away_team} added to database.")
+                except Exception as e:
+                    db.session.rollback()  # Rollback if there is an error adding the event
+                    logging.error(f"Error saving event to the database: {e}")
+                    return False  # Return False if there was an issue with adding the event
 
+            # Iterate through bookmakers and markets to store odds
             for bookmaker in event.get('bookmakers', []):
                 bookmaker_name = bookmaker.get('title', 'N/A')
                 for market in bookmaker.get('markets', []):
@@ -113,14 +122,28 @@ def fetch_and_store_odds(url, odds_type):
                             odds_value=float(outcome.get('price', 0))
                         ))
 
-        with current_app.app_context():
-            db.session.bulk_save_objects(rows)
-            db.session.commit()
-            logging.info(f"{odds_type} odds data successfully stored.")
-        return True
+        # Check if there are any odds to insert into the database
+        if rows:
+            try:
+                with current_app.app_context():
+                    db.session.bulk_save_objects(rows)
+                    db.session.commit()
+                    logging.info(f"{odds_type} odds data successfully stored.")
+            except Exception as e:
+                db.session.rollback()  # Rollback any changes if an error occurs
+                logging.error(f"Error saving {odds_type} odds data to the database: {e}")
+                return False
+        else:
+            logging.warning(f"No odds data available for {odds_type}.")
+            return False
+
+        return True  # Successfully fetched and stored data
 
     except requests.exceptions.RequestException as req_err:
         logging.error(f"Error fetching {odds_type} data: {req_err}")
+        return False
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
         return False
 
 
