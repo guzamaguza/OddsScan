@@ -74,12 +74,21 @@ def plot_odds(event_id):
 
     return img_base64
 
+
+
+
 def fetch_and_store_odds(url, odds_type):
     try:
         # Log the URL to check if the request is being made
         logging.info(f"Fetching {odds_type} data from URL: {url}")
         
-        response = requests.get(url, verify=certifi.where())
+        # Add the API key to the headers
+        headers = {
+            'Authorization': f'Bearer {current_app.config["ODDS_API_KEY"]}'  # Using Bearer Token
+        }
+        
+        # Make the request with the headers
+        response = requests.get(url, headers=headers, verify=certifi.where())
         response.raise_for_status()  # Raise an error if the response status code is not 200
         data = response.json()
 
@@ -145,6 +154,5 @@ def fetch_and_store_odds(url, odds_type):
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         return False
-
 
 
