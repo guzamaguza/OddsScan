@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from app import db
+from app.odds import fetch_and_store_odds
 
 # Define the Blueprint
 main = Blueprint('main', __name__)
