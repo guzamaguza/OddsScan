@@ -5,6 +5,8 @@ from flask import Flask, render_template, request, jsonify, current_app
 from flask_sqlalchemy import SQLAlchemy
 from app.config import Config
 from app.models import db, Odds, Event  # Make sure to import Event
+import requests
+import logging
 
 # Flask App Initialization
 app = Flask(__name__)
@@ -22,12 +24,15 @@ from app.models import Event, Odds  # Make sure you import your models properly
 
 def fetch_and_store_odds(url, odds_type):
     try:
+        # Log the URL to check if the request is being made
+        logging.info(f"Fetching {odds_type} data from URL: {url}")
+        
         response = requests.get(url, verify=certifi.where())
         response.raise_for_status()
         data = response.json()
 
         if not data:
-            print(f"No {odds_type} data returned from API.")
+            logging.error(f"No {odds_type} data returned from API.")
             return False
 
         rows = []
@@ -38,43 +43,33 @@ def fetch_and_store_odds(url, odds_type):
             commence_time = event.get('commence_time', 'N/A')
             timestamp = pd.Timestamp.now().isoformat()
 
-            # Check if the event already exists in the database
+            # Check if the event already exists in the database, if not, create a new Event
             existing_event = Event.query.filter_by(id=event_id).first()
             if not existing_event:
-                new_event = Event(id=event_id, name=f'{home_team} vs {away_team}')
-                db.session.add(new_event)
+                existing_event = Event(id=event_id, name=f'{home_team} vs {away_team}')
+                db.session.add(existing_event)
+                db.session.commit()  # Commit to get the event ID in DB
 
             for bookmaker in event.get('bookmakers', []):
                 bookmaker_name = bookmaker.get('title', 'N/A')
                 for market in bookmaker.get('markets', []):
                     market_key = market.get('key', 'N/A')
                     for outcome in market.get('outcomes', []):
-                        outcome_name = outcome.get('name', 'N/A')
-                        price = float(outcome.get('price', 0))
                         rows.append(Odds(
                             event_id=event_id,
-                            home_team=home_team,
-                            away_team=away_team,
-                            start_time=commence_time,
-                            outcome=outcome_name,
-                            price=price,
-                            bookmaker=bookmaker_name,
-                            timestamp=timestamp
+                            time=commence_time,
+                            odds_value=float(outcome.get('price', 0))
                         ))
 
-        db.session.bulk_save_objects(rows)
-        db.session.commit()
-        print(f"{odds_type} odds data successfully stored.")
+        with app.app_context():
+            db.session.bulk_save_objects(rows)
+            db.session.commit()
+            logging.info(f"{odds_type} odds data successfully stored.")
         return True
 
     except requests.exceptions.RequestException as req_err:
-        print(f"Error fetching {odds_type} data: {req_err}")
+        logging.error(f"Error fetching {odds_type} data: {req_err}")
         return False
-    except Exception as e:
-        print(f"General error while storing {odds_type} odds: {e}")
-        db.session.rollback()
-        return False
-
 
 
 # Flask Routes
