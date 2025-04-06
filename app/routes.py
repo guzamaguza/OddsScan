@@ -17,9 +17,14 @@ main = Blueprint('main', __name__)
 def home():
     return render_template('index.html')
 
-# Route to the plots page
-@main.route('/plots')
-def plots():
-    return render_template('plots.html')
+# Route for individual match details
+@app.route('/match/<event_id>')
+def match_details(event_id):
+    # Fetch match details based on event_id
+    match = Odds.query.filter_by(event_id=event_id).first()  # Query match by event_id
+    if match:
+        return render_template('match_details.html', match=match)
+    else:
+        return "Match not found", 404  # Return 404 if match not found
 
 
