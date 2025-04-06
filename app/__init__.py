@@ -2,11 +2,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
-from flask import Flask
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
-import os
 
 # Initialize the database object globally
 db = SQLAlchemy()
@@ -30,6 +25,7 @@ def create_app():
     app.register_blueprint(main)
 
     return app
+
 
 
 
