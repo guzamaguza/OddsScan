@@ -6,13 +6,17 @@ import base64
 from flask import render_template
 from app import create_app
 from app import db 
+from flask import Blueprint, render_template
 
-app = create_app()
+# Create a Blueprint for your routes
+main = Blueprint('main', __name__)
 
-@app.route('/')
+# Route to home page
+@main.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/plots')
+# Route to the plots page
+@main.route('/plots')
 def plots():
     return render_template('plots.html')
