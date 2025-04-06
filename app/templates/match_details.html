@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Details - {{ match.home_team }} vs {{ match.away_team }}</title>
+</head>
+<body>
+    <header>
+        <h1>Match Details</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/plots">Plots</a></li>
+                <li><a href="/live-odds">Live NBA Odds</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h2>{{ match.home_team }} vs {{ match.away_team }}</h2>
+        <p>Start Time: {{ match.start_time }}</p>
+        <p>Bookmaker: {{ match.bookmaker }}</p>
+        <p>Market: {{ match.market }}</p>
+        <p>Outcome: {{ match.outcome }}</p>
+        <p>Price: {{ match.price }}</p>
+        <!-- Add more details as necessary -->
+    </main>
+
+    <footer>
+        <p>© 2025 OddsScan. All rights reserved.</p>
+    </footer>
+</body>
+</html>
