@@ -66,7 +66,12 @@ def fetch_and_store_odds():
     except psycopg2.Error as e:
         print(f"Error inserting data into PostgreSQL: {e}")
 
+from apscheduler.schedulers.background import BackgroundScheduler
 
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=60)  # Fetch data every hour
+    scheduler.start()
 
 # Run the Flask application
 if __name__ == "__main__":
