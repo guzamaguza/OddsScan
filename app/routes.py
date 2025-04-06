@@ -20,3 +20,7 @@ def home():
 @main.route('/plots')
 def plots():
     return render_template('plots.html')
+
+from flask import Blueprint, render_template
+from app import db  # Import the initialized db instance
+
