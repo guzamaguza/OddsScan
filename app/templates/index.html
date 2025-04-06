@@ -13,15 +13,17 @@
     <section>
         <h2>List of Events:</h2>
         <ul>
-            {% for match in matches %}
-                <li>
-                    <a href="{{ url_for('main.match_details', event_id=match.event_id) }}">
-                        {{ match.home_team }} vs {{ match.away_team }} - {{ match.start_time }}
-                    </a>
-                </li>
+            {% if matches %}
+                {% for match in matches %}
+                    <li>
+                        <a href="{{ url_for('main.match_details', event_id=match.event_id) }}">
+                            {{ match.home_team }} vs {{ match.away_team }} - {{ match.commence_time }}
+                        </a>
+                    </li>
+                {% endfor %}
             {% else %}
                 <li>No upcoming events available.</li>
-            {% endfor %}
+            {% endif %}
         </ul>
     </section>
 
