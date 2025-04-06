@@ -9,6 +9,7 @@ import ssl
 import pandas as pd
 import psycopg2
 from psycopg2 import sql
+from app import create_app
 
 # Setup SSL for secure connections
 print(ssl.get_default_verify_paths())
