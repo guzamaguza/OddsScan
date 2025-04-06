@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OddsScan - Home</title>
-    <!-- Add any other CSS here -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>OddsScan - NBA Matches</title>
 </head>
 <body>
     <header>
@@ -14,22 +12,27 @@
             <ul>
                 <li><a href="/">Home</a></li>
                 <li><a href="/plots">Plots</a></li>
+                <li><a href="/live-odds">Live NBA Odds</a></li>
             </ul>
         </nav>
     </header>
-    
+
     <main>
-        <section>
-            <h2>Live NBA Odds</h2>
-            <p>Get the latest odds for NBA games.</p>
-            <!-- Add any dynamic content here (like the odds data) -->
-        </section>
+        <h2>Upcoming NBA Matches</h2>
+        <ul>
+            <!-- Loop through all the matches and display them as clickable links -->
+            {% for match in matches %}
+                <li>
+                    <a href="{{ url_for('match_details', event_id=match.event_id) }}">
+                        {{ match.home_team }} vs {{ match.away_team }} - {{ match.start_time }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
     </main>
 
     <footer>
-        <p>&copy; 2025 OddsScan. All rights reserved.</p>
+        <p>© 2025 OddsScan. All rights reserved.</p>
     </footer>
 </body>
 </html>
->
-
