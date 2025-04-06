@@ -30,7 +30,7 @@ db = SQLAlchemy(app)
 # Function to fetch and store odds in the database
 def fetch_and_store_odds(url, odds_type):
     try:
-        response = requests.get(url, verify=certifi.where())
+        response = requests.get(url, verify=False)
         response.raise_for_status()
         data = response.json()
 
