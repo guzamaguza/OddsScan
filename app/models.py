@@ -3,6 +3,7 @@ from app import db
 class Odds(db.Model):
     __tablename__ = 'odds'
     __table_args__ = {'extend_existing': True}  # Add this line
+
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String, nullable=False)
     home_team = db.Column(db.String, nullable=False)
@@ -15,6 +16,9 @@ class Odds(db.Model):
     point = db.Column(db.Float, nullable=True)
     timestamp = db.Column(db.String, nullable=False)
     odds_type = db.Column(db.String, nullable=False)
+    
+    # Add this line to include commence_time
+    commence_time = db.Column(db.DateTime, nullable=False)  # You can adjust the column type if needed
 
 
 
