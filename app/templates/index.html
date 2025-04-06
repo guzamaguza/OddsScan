@@ -3,36 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OddsScan - NBA Matches</title>
+    <title>OddsScan</title>
 </head>
 <body>
     <header>
-        <h1>Welcome to OddsScan!</h1>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/plots">Plots</a></li>
-                <li><a href="/live-odds">Live NBA Odds</a></li>
-            </ul>
-        </nav>
+        <h1>OddsScan</h1>
     </header>
 
-    <main>
-        <h2>Upcoming NBA Matches</h2>
+    <section>
+        <h2>List of Events:</h2>
         <ul>
-            <!-- Loop through all the matches and display them as clickable links -->
             {% for match in matches %}
                 <li>
-                    <a href="{{ url_for('match_details', event_id=match.event_id) }}">
+                    <a href="{{ url_for('main.match_details', event_id=match.event_id) }}">
                         {{ match.home_team }} vs {{ match.away_team }} - {{ match.start_time }}
                     </a>
                 </li>
+            {% else %}
+                <li>No upcoming events available.</li>
             {% endfor %}
         </ul>
-    </main>
+    </section>
 
     <footer>
-        <p>© 2025 OddsScan. All rights reserved.</p>
+        <p>&copy; 2025 OddsScan. All rights reserved.</p>
     </footer>
 </body>
 </html>
