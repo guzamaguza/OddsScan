@@ -8,6 +8,7 @@ from app import create_app
 from app import db 
 from flask import Blueprint, render_template
 
+
 # Create a Blueprint for your routes
 main = Blueprint('main', __name__)
 
@@ -21,6 +22,4 @@ def home():
 def plots():
     return render_template('plots.html')
 
-from flask import Blueprint, render_template
-from app import db  # Import the initialized db instance
 
