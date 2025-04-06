@@ -22,8 +22,16 @@ MARKETS = 'h2h,spreads,totals'  # Market types for both pre-game and live odds
 PRE_EVENT_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal'
 LIVE_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal&eventStatus=live'
 
-# Initialize Flask app
-app = Flask(__name__)
+from app import create_app
+
+# Create the app instance
+app = create_app()
+
+# Run the Flask application
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
