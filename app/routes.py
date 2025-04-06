@@ -9,16 +9,22 @@ from app import db
 from flask import Blueprint, render_template
 
 
-# Create a Blueprint for your routes
+from flask import Blueprint, render_template
+from app import db
+from app.models import Odds  # Ensure you have this import to query the database
+
+# Create a Blueprint for the routes
 main = Blueprint('main', __name__)
 
-# Route to home page
+# Route for the homepage
 @main.route('/')
 def home():
-    return render_template('index.html')
+    # Fetch all matches from the database
+    matches = Odds.query.all()  # Fetch all odds/matches from the database
+    return render_template('index.html', matches=matches)
 
 # Route for individual match details
-@app.route('/match/<event_id>')
+@main.route('/match/<event_id>')
 def match_details(event_id):
     # Fetch match details based on event_id
     match = Odds.query.filter_by(event_id=event_id).first()  # Query match by event_id
