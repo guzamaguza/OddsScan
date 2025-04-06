@@ -7,6 +7,8 @@ from flask import render_template
 from app import create_app
 from app import db 
 
+app = create_app()
+
 @app.route('/')
 def home():
     return render_template('index.html')
