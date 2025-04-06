@@ -19,9 +19,10 @@ main = Blueprint('main', __name__)
 # Route for the homepage
 @main.route('/')
 def home():
-    # Fetch all matches from the database
-    matches = Odds.query.all()  # Fetch all odds/matches from the database
-    return render_template('index.html', matches=matches)
+    # Query the odds table for NBA events
+    events = db.session.execute("SELECT event_id, home_team, away_team, commence_time FROM odds").fetchall()
+
+    return render_template('index.html', matches=events)
 
 # Route for individual match details
 @main.route('/match/<event_id>')
