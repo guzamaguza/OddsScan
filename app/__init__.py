@@ -1,31 +1,25 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from dotenv import load_dotenv
 import os
 
-# Initialize the database object globally
+# Initialize SQLAlchemy
 db = SQLAlchemy()
 
 def create_app():
-    # Load environment variables
-    load_dotenv()
-
-    # Create Flask app
     app = Flask(__name__)
 
-    # Configure the app
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+    # Setup configurations
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', '')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Initialize the database with the app
+    # Initialize the app with the database
     db.init_app(app)
 
-    # Import routes here to avoid circular import
+    # Register blueprints
     from app.routes import main
     app.register_blueprint(main)
 
     return app
-
 
 
 
