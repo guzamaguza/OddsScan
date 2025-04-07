@@ -94,6 +94,6 @@ def start_scheduler():
 if __name__ == "__main__":
     print("[DEBUG] Running fetch_and_store_odds manually...")
     fetch_and_store_odds(API_URL, SPORT)  # Force it to run once
-    print("[DEBUG] Starting scheduler now...")
-    start_scheduler()
+    #print("[DEBUG] Starting scheduler now...")
+    #start_scheduler()
     app.run(debug=True)
