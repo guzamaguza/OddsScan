@@ -4,10 +4,8 @@ import psycopg2
 import pandas as pd
 from datetime import datetime
 import os
-import requests
 from dotenv import load_dotenv
-import psycopg2
-import pandas as pd
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Create the app instance
 app = create_app()
@@ -27,8 +25,8 @@ API_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}
 def fetch_and_store_odds(url, odds_type):
     try:
         # Make the API request
-        response = requests.get(url, verify=False)
-        response.raise_for_status()
+        response = requests.get(url)
+        response.raise_for_status()  # Will raise an exception for non-2xx status codes
         data = response.json()
 
         # Debug: Print API Response to ensure we are getting data
@@ -81,13 +79,12 @@ def fetch_and_store_odds(url, odds_type):
     except psycopg2.Error as e:
         print(f"Error inserting data into PostgreSQL: {e}")
 
-from apscheduler.schedulers.background import BackgroundScheduler
-
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=30)  
+    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=60)  # Fetch data every hour
     scheduler.start()
 
 # Run the Flask application
 if __name__ == "__main__":
+    start_scheduler()  # Start the scheduler
     app.run(debug=True)
