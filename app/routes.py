@@ -24,4 +24,3 @@ def match_details(event_id):
         return render_template('match_details.html', match=match)
     else:
         return "Match not found", 404  # Return 404 if match not found
-
