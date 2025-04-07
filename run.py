@@ -108,5 +108,6 @@ if __name__ == "__main__":
     # --- Add this block to run on startup ---
     print("[DEBUG] Running fetch_and_store_odds manually on startup...")
     fetch_and_store_odds(API_URL, SPORT)
+    start_scheduler()
     app.run(debug=True)
 
