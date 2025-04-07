@@ -85,7 +85,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=60)  # Fetch data every hour
+    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=30)  
     scheduler.start()
 
 # Run the Flask application
