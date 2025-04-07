@@ -89,7 +89,11 @@ def start_scheduler():
     scheduler.start()
     print("Scheduler started!")  # Debug print
 
-# Run the Flask application
+
+
 if __name__ == "__main__":
-    start_scheduler()  # Start the scheduler
+    print("[DEBUG] Running fetch_and_store_odds manually...")
+    fetch_and_store_odds(API_URL, SPORT)  # Force it to run once
+    print("[DEBUG] Starting scheduler now...")
+    start_scheduler()
     app.run(debug=True)
