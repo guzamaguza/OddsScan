@@ -85,6 +85,7 @@ def start_scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(lambda: fetch_and_store_odds(API_URL, SPORT), 'interval', minutes=30)
     scheduler.start()
+    print("Scheduler started!")  # Debug print
 
 # Run the Flask application
 if __name__ == "__main__":
