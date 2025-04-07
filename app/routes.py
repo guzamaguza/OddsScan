@@ -6,17 +6,22 @@ from app.models import Odds  # Ensure you have this import to query the database
 # Create a Blueprint for the routes
 main = Blueprint('main', __name__)
 
-# Route for the homepage
 @main.route('/')
 def home():
     # Query the odds table for NBA events
-    query = text("SELECT event_id, home_team, away_team, commence_time FROM odds")  # Wrap SQL query with text()
+    query = text("SELECT event_id, home_team, away_team, commence_time FROM odds")
     events = db.session.execute(query).fetchall()  # Execute the query
+
+    # Debugging: Print the fetched events
+    print(f"Fetched events: {events}")
+
+    if not events:
+        print("No events found in the database.")
     
     # Convert the query results into a list of dictionaries for easy access in the template
     events_list = [{'event_id': event[0], 'home_team': event[1], 'away_team': event[2], 'commence_time': event[3]} for event in events]
 
-    return render_template('index.html', matches=events_list)  # Pass events to the homepage template
+    return render_template('index.html', matches=events_list)
 
 # Route for individual match details
 @main.route('/match/<event_id>')
