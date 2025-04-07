@@ -51,9 +51,19 @@ def fetch_and_store_odds(url, odds_type):
                 for market in bookmaker.get('markets', []):
                     market_key = market.get('key', 'N/A')
                     for outcome in market.get('outcomes', []):
+                        # Replace "N/A" with None for price and point
+                        price = outcome.get('price', 'N/A')
+                        point = outcome.get('point', 'N/A')
+
+                        # Convert "N/A" to None if the field is price or point
+                        if price == 'N/A':
+                            price = None
+                        if point == 'N/A':
+                            point = None
+
                         rows.append((event_id, home_team, away_team, commence_time, bookmaker_name,
-                                     market_key, outcome.get('name', 'N/A'), outcome.get('price', 'N/A'),
-                                     outcome.get('point', 'N/A'), timestamp, odds_type))
+                                     market_key, outcome.get('name', 'N/A'), price, point,
+                                     timestamp, odds_type))
 
         # Debug: Print rows to check if we have any data to insert
         print(f"Rows to insert: {rows}")
@@ -80,6 +90,7 @@ def fetch_and_store_odds(url, odds_type):
         print(f"Error fetching {odds_type} data: {req_err}")
     except psycopg2.Error as e:
         print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
+
 
 
 
