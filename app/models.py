@@ -8,7 +8,7 @@ class Odds(db.Model):
     event_id = db.Column(db.String, nullable=False)
     home_team = db.Column(db.String, nullable=False)
     away_team = db.Column(db.String, nullable=False)
-    commence_time = db.Column(db.DateTime, nullable=False)
+    commence_time = db.Column(db.String, nullable=False)
     bookmaker = db.Column(db.String, nullable=False)
     market = db.Column(db.String, nullable=False)
     outcome = db.Column(db.String, nullable=False)
