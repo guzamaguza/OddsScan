@@ -77,7 +77,8 @@ def fetch_and_store_odds(url, odds_type):
     except requests.exceptions.RequestException as req_err:
         print(f"Error fetching {odds_type} data: {req_err}")
     except psycopg2.Error as e:
-        print(f"Error inserting data into PostgreSQL: {e}")
+        print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
+
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
