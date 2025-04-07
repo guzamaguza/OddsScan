@@ -80,9 +80,10 @@ def fetch_and_store_odds(url, odds_type):
         print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
 
 
+
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_and_store_odds, 'interval', minutes=60)  # Fetch data every hour
+    scheduler.add_job(lambda: fetch_and_store_odds(API_URL, SPORT), 'interval', minutes=30)
     scheduler.start()
 
 # Run the Flask application
