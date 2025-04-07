@@ -27,6 +27,8 @@ def fetch_and_store_odds(url, odds_type):
         # Make the API request
         response = requests.get(url)
         response.raise_for_status()  # Will raise an exception for non-2xx status codes
+        print("RAW API Response:", response.text)
+        print("Status Code:", response.status_code)
         data = response.json()
 
         # Debug: Print API Response to ensure we are getting data
