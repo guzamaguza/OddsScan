@@ -20,7 +20,7 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 SPORT = 'basketball_nba'
 REGION = 'us'
 MARKETS = 'h2h,spreads,totals'
-API_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal'
+API_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal&eventStatus=live'
 
 def fetch_and_store_odds(url, odds_type):
     try:
