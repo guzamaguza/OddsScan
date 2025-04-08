@@ -6,13 +6,20 @@ from app.models import Odds, Score  # Ensure you have this import to query the d
 # Create a Blueprint for the routes
 main = Blueprint('main', __name__)
 
+
 # Route for the home page
 @main.route('/')
 def home():
     # Query the odds table for distinct NBA events, including completed and score information
     query = text("""
-        SELECT DISTINCT ON (odds.event_id) odds.event_id, odds.home_team, odds.away_team, odds.commence_time,
-            odds.completed, score.home_score, score.away_score
+        SELECT DISTINCT ON (odds.event_id) 
+            odds.event_id, 
+            odds.home_team, 
+            odds.away_team, 
+            odds.commence_time,
+            odds.completed, 
+            score.home_score, 
+            score.away_score
         FROM odds
         LEFT JOIN score ON odds.event_id = score.event_id
         ORDER BY odds.event_id, odds.commence_time DESC
@@ -33,8 +40,8 @@ def home():
             'away_team': event[2],
             'commence_time': event[3],
             'completed': event[4],
-            'home_score': event[5] if event[5] is not None else "N/A",  # Handle missing scores
-            'away_score': event[6] if event[6] is not None else "N/A"   # Handle missing scores
+            'home_score': event[5],
+            'away_score': event[6]
         }
         for event in events
     ]
