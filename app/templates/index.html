@@ -17,8 +17,20 @@
                 {% for match in matches %}
                     <li>
                         <a href="{{ url_for('main.match_details', event_id=match.event_id) }}">
-                            {{ match.home_team }} vs {{ match.away_team }} - {{ match.commence_time }}
+                            {{ match.home_team }} vs {{ match.away_team }} - {{ match.commence_time }} 
+                            {% if match.completed %}
+                                (Completed)
+                            {% else %}
+                                (Ongoing)
+                            {% endif %}
                         </a>
+                        <br>
+                        <strong>Score: </strong>
+                        {% if match.home_score is not none and match.away_score is not none %}
+                            {{ match.home_score }} - {{ match.away_score }}
+                        {% else %}
+                            Score not available yet
+                        {% endif %}
                     </li>
                 {% endfor %}
             {% else %}
