@@ -13,14 +13,15 @@ app = create_app()
 # Load environment variables from .env
 load_dotenv()
 
-# Get the environment variables for the API and Database URL
 API_KEY = os.getenv('ODDS_API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 SPORT = 'basketball_nba'
 REGION = 'us'
 MARKETS = 'h2h,spreads,totals'
-API_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal&eventStatus=live'
+
+ODDS_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}&regions={REGION}&markets={MARKETS}&oddsFormat=decimal&eventStatus=live'
+SCORES_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/scores/?daysFrom=1&apiKey={API_KEY}'
 
 def fetch_and_store_odds(url, odds_type):
     try:
@@ -87,23 +88,59 @@ def fetch_and_store_odds(url, odds_type):
     except psycopg2.Error as e:
         print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
 
+def fetch_and_store_scores():
+    try:
+        response = requests.get(SCORES_URL)
+        response.raise_for_status()
+        data = response.json()
 
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
 
+        updated_count = 0
+        for event in data:
+            if not event.get("scores"):
+                continue
+
+            event_id = event["id"]
+            completed = event.get("completed", False)
+            home_team = event.get("home_team")
+            away_team = event.get("away_team")
+
+            scores = {s["name"]: int(s["score"]) for s in event["scores"]}
+
+            home_score = scores.get(home_team)
+            away_score = scores.get(away_team)
+
+            update_query = '''
+                UPDATE odds
+                SET completed = %s, home_score = %s, away_score = %s
+                WHERE event_id = %s
+            '''
+            cursor.execute(update_query, (completed, home_score, away_score, event_id))
+            updated_count += cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"✅ {updated_count} events updated with scores.")
+    except requests.exceptions.RequestException as req_err:
+        print(f"Error fetching scores: {req_err}")
+    except psycopg2.Error as e:
+        print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(lambda: fetch_and_store_odds(API_URL, SPORT), 'interval', minutes=30)
+    scheduler.add_job(lambda: fetch_and_store_odds(ODDS_URL, SPORT), 'interval', minutes=30)
+    scheduler.add_job(fetch_and_store_scores, 'interval', minutes=30)
     scheduler.start()
-    print("Scheduler started!")  # Debug print
-
-
-
-
+    print("🕒 Scheduler started!")
 
 if __name__ == "__main__":
-    # --- Add this block to run on startup ---
-    print("[DEBUG] Running fetch_and_store_odds manually on startup...")
-    fetch_and_store_odds(API_URL, SPORT)
+    print("[DEBUG] Fetching odds and scores on startup...")
+    fetch_and_store_odds(ODDS_URL, SPORT)
+    fetch_and_store_scores()
     start_scheduler()
     app.run(debug=True)
+
 
