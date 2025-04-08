@@ -2,7 +2,7 @@ from app import db
 
 class Odds(db.Model):
     __tablename__ = 'odds'
-    __table_args__ = {'extend_existing': True}  # Add this line to allow altering the table schema
+    __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String, nullable=False)
@@ -17,10 +17,20 @@ class Odds(db.Model):
     timestamp = db.Column(db.String, nullable=False)
     odds_type = db.Column(db.String, nullable=False)
 
-    # New fields
-    completed = db.Column(db.Boolean, nullable=False, default=False)  # Indicates if the event is completed
-    home_score = db.Column(db.Integer, nullable=True)  # Stores the home team's score
-    away_score = db.Column(db.Integer, nullable=True)  # Stores the away team's score
+    # Optional relationship to scores
+    score = db.relationship("Score", backref="odds", lazy=True, uselist=False, primaryjoin="Odds.event_id == Score.event_id")
+
+
+class Score(db.Model):
+    __tablename__ = 'scores'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String, db.ForeignKey('odds.event_id'), nullable=False, unique=True)
+    completed = db.Column(db.Boolean, nullable=False, default=False)
+    home_score = db.Column(db.Integer, nullable=True)
+    away_score = db.Column(db.Integer, nullable=True)
+    last_updated = db.Column(db.DateTime, nullable=True)
 
     
 
