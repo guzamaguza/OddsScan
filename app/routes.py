@@ -6,22 +6,37 @@ from app.models import Odds  # Ensure you have this import to query the database
 # Create a Blueprint for the routes
 main = Blueprint('main', __name__)
 
+from sqlalchemy import text
+
 @main.route('/')
 def home():
-    # Query the odds table for NBA events
-    query = text("SELECT event_id, home_team, away_team, commence_time FROM odds")
-    events = db.session.execute(query).fetchall()  # Execute the query
+    # Query the odds table for distinct NBA events
+    query = text("""
+        SELECT DISTINCT ON (event_id) event_id, home_team, away_team, commence_time
+        FROM odds
+        ORDER BY event_id, commence_time DESC
+    """)
+    events = db.session.execute(query).fetchall()
 
     # Debugging: Print the fetched events
-    print(f"Fetched events: {events}")
+    print(f"Fetched distinct events: {events}")
 
     if not events:
         print("No events found in the database.")
-    
-    # Convert the query results into a list of dictionaries for easy access in the template
-    events_list = [{'event_id': event[0], 'home_team': event[1], 'away_team': event[2], 'commence_time': event[3]} for event in events]
+
+    # Convert the query results into a list of dictionaries
+    events_list = [
+        {
+            'event_id': event[0],
+            'home_team': event[1],
+            'away_team': event[2],
+            'commence_time': event[3]
+        }
+        for event in events
+    ]
 
     return render_template('index.html', matches=events_list)
+
 
 # Route for individual match details
 @main.route('/match/<event_id>')
