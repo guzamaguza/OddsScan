@@ -139,7 +139,7 @@ def start_scheduler():
 if __name__ == "__main__":
     print("[DEBUG] Fetching odds and scores on startup...")
     fetch_and_store_odds(ODDS_URL, SPORT)
-    fetch_and_store_scores()
+    fetch_and_store_scores(SPORT, API_KEY)
     start_scheduler()
     app.run(debug=True)
 
