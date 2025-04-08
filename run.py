@@ -24,15 +24,9 @@ API_URL = f'https://api.the-odds-api.com/v4/sports/{SPORT}/odds?apiKey={API_KEY}
 
 def fetch_and_store_odds(url, odds_type):
     try:
-        # Make the API request
         response = requests.get(url)
-        response.raise_for_status()  # Will raise an exception for non-2xx status codes
-        print("RAW API Response:", response.text)
-        print("Status Code:", response.status_code)
+        response.raise_for_status()
         data = response.json()
-
-        # Debug: Print API Response to ensure we are getting data
-        print(f"API Response: {data}")
 
         if not data:
             print(f"No {odds_type} data returned from API.")
@@ -51,39 +45,41 @@ def fetch_and_store_odds(url, odds_type):
                 for market in bookmaker.get('markets', []):
                     market_key = market.get('key', 'N/A')
                     for outcome in market.get('outcomes', []):
-                        # Replace "N/A" with None for price and point
-                        price = outcome.get('price', 'N/A')
-                        point = outcome.get('point', 'N/A')
-
-                        # Convert "N/A" to None if the field is price or point
-                        if price == 'N/A':
-                            price = None
-                        if point == 'N/A':
-                            point = None
+                        price = outcome.get('price', None)
+                        point = outcome.get('point', None)
 
                         rows.append((event_id, home_team, away_team, commence_time, bookmaker_name,
                                      market_key, outcome.get('name', 'N/A'), price, point,
                                      timestamp, odds_type))
 
-        # Debug: Print rows to check if we have any data to insert
-        print(f"Rows to insert: {rows}")
-
         if rows:
-            # Connect to PostgreSQL using the DATABASE_URL
             conn = psycopg2.connect(DATABASE_URL)
             cursor = conn.cursor()
 
-            # Insert the rows into PostgreSQL
             insert_query = '''
                 INSERT INTO odds (event_id, home_team, away_team, commence_time, bookmaker, market, outcome, price, point, timestamp, odds_type)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
-            cursor.executemany(insert_query, rows)
+
+            inserted_count = 0
+            for row in rows:
+                event_id = row[0]
+                commence_time = row[3]
+
+                # Check if this event already exists
+                cursor.execute(
+                    "SELECT 1 FROM odds WHERE event_id = %s AND commence_time = %s LIMIT 1",
+                    (event_id, commence_time)
+                )
+                if cursor.fetchone() is None:
+                    cursor.execute(insert_query, row)
+                    inserted_count += 1
+
             conn.commit()
             cursor.close()
             conn.close()
 
-            print(f"{odds_type} odds data successfully stored.")
+            print(f"{inserted_count} new {odds_type} odds rows inserted.")
         else:
             print(f"No {odds_type} odds to insert.")
     except requests.exceptions.RequestException as req_err:
