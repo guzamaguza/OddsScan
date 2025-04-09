@@ -16,11 +16,11 @@ def home():
             odds.home_team, 
             odds.away_team, 
             odds.commence_time,
-            score.completed, 
-            score.home_score, 
-            score.away_score
+            scores.completed, 
+            scores.home_score, 
+            scores.away_score
         FROM odds
-        LEFT JOIN score ON odds.event_id = score.event_id
+        LEFT JOIN scores ON odds.event_id = scores.event_id
         ORDER BY odds.event_id, odds.commence_time DESC
     """)
     events = db.session.execute(query).fetchall()
