@@ -6,7 +6,6 @@ from app.models import Odds, Score  # Ensure you have this import to query the d
 # Create a Blueprint for the routes
 main = Blueprint('main', __name__)
 
-
 # Route for the home page
 @main.route('/')
 def home():
@@ -17,7 +16,7 @@ def home():
             odds.home_team, 
             odds.away_team, 
             odds.commence_time,
-            odds.completed, 
+            score.completed, 
             score.home_score, 
             score.away_score
         FROM odds
@@ -69,11 +68,10 @@ def match_details(event_id):
             'point': odds.point,
             'timestamp': odds.timestamp,
             'odds_type': odds.odds_type,
-            'completed': score.completed if score else False,
+            'completed': score.completed if score else False,  # If score exists, use its completed status
             'home_score': score.home_score if score else "N/A",  # Handle missing scores
             'away_score': score.away_score if score else "N/A"   # Handle missing scores
         }
         return render_template('match_details.html', match=match_data)
     else:
         return "Match not found", 404  # Return 404 if match not found
-
