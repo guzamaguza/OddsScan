@@ -111,9 +111,9 @@ def fetch_and_store_scores():
             home_score = scores.get(home_team)
             away_score = scores.get(away_team)
 
-            # UPSERT into score table
+            # UPSERT into scores table
             cursor.execute("""
-                INSERT INTO score (event_id, home_score, away_score, completed)
+                INSERT INTO scores (event_id, home_score, away_score, completed)
                 VALUES (%s, %s, %s, %s)
                 ON CONFLICT (event_id) DO UPDATE SET
                     home_score = EXCLUDED.home_score,
@@ -125,7 +125,7 @@ def fetch_and_store_scores():
         conn.commit()
         cursor.close()
         conn.close()
-        print(f"✅ {updated_count} events updated in score table.")
+        print(f"✅ {updated_count} events updated in scores table.")
     except requests.exceptions.RequestException as req_err:
         print(f"Error fetching scores: {req_err}")
     except psycopg2.Error as e:
