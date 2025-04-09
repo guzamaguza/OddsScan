@@ -21,6 +21,7 @@ def home():
             scores.away_score
         FROM odds
         LEFT JOIN scores ON odds.event_id = scores.event_id
+        WHERE scores.completed IS TRUE OR scores.completed IS NULL
         ORDER BY odds.event_id, odds.commence_time DESC
     """)
     events = db.session.execute(query).fetchall()
