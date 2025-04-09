@@ -67,14 +67,22 @@ def fetch_and_store_odds(url, odds_type):
                 event_id = row[0]
                 commence_time = row[3]
 
+                # Debug print to check values being inserted
+                print(f"[DEBUG] Checking if event_id: {event_id} with commence_time: {commence_time} already exists...")
+
                 # Check if this event already exists
                 cursor.execute(
                     "SELECT 1 FROM odds WHERE event_id = %s AND commence_time = %s LIMIT 1",
                     (event_id, commence_time)
                 )
                 if cursor.fetchone() is None:
-                    cursor.execute(insert_query, row)
-                    inserted_count += 1
+                    try:
+                        cursor.execute(insert_query, row)
+                        inserted_count += 1
+                    except psycopg2.Error as e:
+                        print(f"[ERROR] Failed to insert row for event_id: {event_id}, error: {e.pgerror}")
+                else:
+                    print(f"[DEBUG] Event already exists, skipping insertion: event_id = {event_id}, commence_time = {commence_time}")
 
             conn.commit()
             cursor.close()
