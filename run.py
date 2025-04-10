@@ -152,9 +152,5 @@ def start_scheduler():
     print("🕒 Scheduler started!")
 
 if __name__ == "__main__":
-    print("[DEBUG] Fetching odds and scores on startup...")
-    fetch_and_store_odds(ODDS_URL, SPORT)
-    fetch_and_store_scores()
-    start_scheduler()
+    # No need to fetch data here, it’s handled in __init__.py
     app.run(debug=True)
-
