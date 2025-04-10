@@ -4,12 +4,12 @@ from datetime import datetime
 class Odds(db.Model):
     __tablename__ = 'odds'
     __table_args__ = (
-        db.UniqueConstraint('game_id', 'bookmakers', 'market', 'outcome', name='unique_odds_entry'),
+        db.UniqueConstraint('event_id', 'bookmakers', 'market', 'outcome', name='unique_odds_entry'),
         {'extend_existing': True}
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.String, nullable=False)  # No unique constraint here
+    event_id = db.Column(db.String, nullable=False)  # Changed from game_id to event_id
     sport_key = db.Column(db.String, nullable=False)
     sport_title = db.Column(db.String, nullable=False)
     commence_time = db.Column(db.DateTime, nullable=False)
@@ -25,14 +25,14 @@ class Odds(db.Model):
     score = db.relationship("Score", back_populates="odds_entry", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Odds(game_id={self.game_id}, home_team={self.home_team}, away_team={self.away_team})>"
+        return f"<Odds(event_id={self.event_id}, home_team={self.home_team}, away_team={self.away_team})>"
 
 class Score(db.Model):
     __tablename__ = 'scores'
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.String, db.ForeignKey('odds.game_id'), nullable=False)  # ForeignKey to odds.game_id
+    event_id = db.Column(db.String, db.ForeignKey('odds.event_id'), nullable=False)  # Changed from game_id to event_id
     completed = db.Column(db.Boolean, nullable=False, default=False)
     home_score = db.Column(db.Integer, nullable=True)
     away_score = db.Column(db.Integer, nullable=True)
@@ -42,6 +42,4 @@ class Score(db.Model):
     odds_entry = db.relationship("Odds", back_populates="score", uselist=False)
 
     def __repr__(self):
-        return f"<Score(game_id={self.game_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
-
-
+        return f"<Score(event_id={self.event_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
