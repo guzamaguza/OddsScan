@@ -9,13 +9,15 @@ class Odds(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.String, nullable=False, unique=True)  # Changed from event_id to game_id
+    game_id = db.Column(db.String, nullable=False)  # No unique constraint here
     sport_key = db.Column(db.String, nullable=False)
     sport_title = db.Column(db.String, nullable=False)
     commence_time = db.Column(db.DateTime, nullable=False)
     home_team = db.Column(db.String, nullable=False)
     away_team = db.Column(db.String, nullable=False)
     bookmakers = db.Column(db.JSON, nullable=True)  # Stores bookmakers in JSON format
+    market = db.Column(db.String, nullable=False)  # Added market column
+    outcome = db.Column(db.String, nullable=False)  # Added outcome column
     link = db.Column(db.String, nullable=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -30,7 +32,7 @@ class Score(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.String, db.ForeignKey('odds.game_id'), nullable=False, unique=True)  # Changed from event_id to game_id
+    game_id = db.Column(db.String, db.ForeignKey('odds.game_id'), nullable=False)  # ForeignKey to odds.game_id
     completed = db.Column(db.Boolean, nullable=False, default=False)
     home_score = db.Column(db.Integer, nullable=True)
     away_score = db.Column(db.Integer, nullable=True)
@@ -41,4 +43,5 @@ class Score(db.Model):
 
     def __repr__(self):
         return f"<Score(game_id={self.game_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
+
 
