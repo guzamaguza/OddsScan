@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OddsScan</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file if needed -->
 </head>
 <body>
     <header>
@@ -19,9 +20,9 @@
                         <a href="{{ url_for('main.match_details', event_id=match.event_id) }}">
                             {{ match.home_team }} vs {{ match.away_team }} - {{ match.commence_time }} 
                             {% if match.completed %}
-                                (Completed)
+                                <span>(Completed)</span>
                             {% else %}
-                                (Ongoing)
+                                <span>(Ongoing)</span>
                             {% endif %}
                         </a>
                         <br>
