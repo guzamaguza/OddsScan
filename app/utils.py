@@ -53,7 +53,7 @@ def fetch_and_store_odds(url, odds_type):
             cursor = conn.cursor()
 
             insert_query = '''
-                INSERT INTO odds (event_id, home_team, away_team, commence_time, bookmaker, market, outcome, price, point, timestamp, odds_type)
+                INSERT INTO odds (event_id, home_team, away_team, commence_time, bookmakers, market, outcome, price, point, timestamp, odds_type)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             '''
 
