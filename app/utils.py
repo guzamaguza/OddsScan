@@ -55,27 +55,13 @@ def fetch_and_store_odds(url, odds_type):
             insert_query = '''
                 INSERT INTO odds (event_id, home_team, away_team, commence_time, bookmakers, market, outcome, price, point, timestamp, odds_type)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (event_id, commence_time) DO NOTHING
             '''
 
             inserted_count = 0
             for row in rows:
-                event_id = row[0]
-                commence_time = row[3]
-
-                print(f"[DEBUG] Checking if event_id: {event_id} with commence_time: {commence_time} already exists...")
-
-                cursor.execute(
-                    "SELECT 1 FROM odds WHERE event_id = %s AND commence_time = %s LIMIT 1",
-                    (event_id, commence_time)
-                )
-                if cursor.fetchone() is None:
-                    try:
-                        cursor.execute(insert_query, row)
-                        inserted_count += 1
-                    except psycopg2.Error as e:
-                        print(f"[ERROR] Failed to insert row for event_id: {event_id}, error: {e.pgerror}")
-                else:
-                    print(f"[DEBUG] Event already exists, skipping insertion: event_id = {event_id}, commence_time = {commence_time}")
+                cursor.execute(insert_query, row)
+                inserted_count += 1
 
             conn.commit()
             cursor.close()
@@ -94,8 +80,6 @@ def fetch_and_store_scores():
         response = requests.get(SCORES_URL)
         response.raise_for_status()
         data = response.json()
-
-        print(f"API Response Data: {data}")  # Add this for debugging
 
         if not data:
             print("No score data returned from the API.")
