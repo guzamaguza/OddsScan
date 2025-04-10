@@ -4,7 +4,7 @@ from datetime import datetime
 class Odds(db.Model):
     __tablename__ = 'odds'
     __table_args__ = (
-        db.UniqueConstraint('game_id', 'bookmaker', 'market', 'outcome', name='unique_odds_entry'),
+        db.UniqueConstraint('game_id', 'bookmakers', 'market', 'outcome', name='unique_odds_entry'),
         {'extend_existing': True}
     )
 
@@ -41,3 +41,4 @@ class Score(db.Model):
 
     def __repr__(self):
         return f"<Score(game_id={self.game_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
+
