@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Load environment variables
 load_dotenv()
@@ -137,3 +138,11 @@ def fetch_and_store_scores():
         print(f"Error fetching scores: {req_err}")
     except psycopg2.Error as e:
         print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
+
+# Start the scheduler
+def start_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(lambda: fetch_and_store_odds(ODDS_URL, SPORT), 'interval', minutes=30)
+    scheduler.add_job(fetch_and_store_scores, 'interval', minutes=30)
+    scheduler.start()
+    print("🕒 Scheduler started!")
