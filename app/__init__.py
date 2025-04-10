@@ -1,8 +1,9 @@
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+import os
+from app.utils import fetch_and_store_odds, fetch_and_store_scores, start_scheduler
 
 # Load environment variables
 load_dotenv()
@@ -25,14 +26,14 @@ def create_app():
     from app.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    # Create all tables if they don't exist
+    # Trigger data fetching on startup
     with app.app_context():
-        db.create_all()
+        print("[DEBUG] Fetching odds and scores on startup...")
+        fetch_and_store_odds(ODDS_URL, SPORT)
+        fetch_and_store_scores()
+        start_scheduler()
 
     return app
-
-
-
 
 
 
