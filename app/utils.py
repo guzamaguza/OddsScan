@@ -95,6 +95,12 @@ def fetch_and_store_scores():
         response.raise_for_status()
         data = response.json()
 
+        print(f"API Response Data: {data}")  # Add this for debugging
+
+        if not data:
+            print("No score data returned from the API.")
+            return
+
         conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
 
@@ -138,6 +144,7 @@ def fetch_and_store_scores():
         print(f"Error fetching scores: {req_err}")
     except psycopg2.Error as e:
         print(f"PostgreSQL error: {e.pgerror}, details: {e.diag.message_primary}")
+
 
 # Start the scheduler
 def start_scheduler():
