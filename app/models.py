@@ -18,10 +18,11 @@ class Odds(db.Model):
     outcome = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
     point = db.Column(db.Float, nullable=True)
-    timestamp = db.Column(db.DateTime, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     odds_type = db.Column(db.String, nullable=False)
 
-    score = db.relationship("Score", back_populates="odds_entry", uselist=False)
+    # Relationship with Score table
+    score = db.relationship("Score", back_populates="odds_entry", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Odds(event_id={self.event_id}, home_team={self.home_team}, away_team={self.away_team})>"
@@ -35,9 +36,11 @@ class Score(db.Model):
     completed = db.Column(db.Boolean, nullable=False, default=False)
     home_score = db.Column(db.Integer, nullable=True)
     away_score = db.Column(db.Integer, nullable=True)
-    last_updated = db.Column(db.DateTime, nullable=True)
+    last_updated = db.Column(db.DateTime, nullable=True, default=datetime.utcnow)
 
+    # Relationship to Odds
     odds_entry = db.relationship("Odds", back_populates="score", uselist=False)
 
     def __repr__(self):
         return f"<Score(event_id={self.event_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
+
