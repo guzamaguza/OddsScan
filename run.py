@@ -67,10 +67,8 @@ def fetch_and_store_odds(url, odds_type):
                 event_id = row[0]
                 commence_time = row[3]
 
-                # Debug print to check values being inserted
                 print(f"[DEBUG] Checking if event_id: {event_id} with commence_time: {commence_time} already exists...")
 
-                # Check if this event already exists
                 cursor.execute(
                     "SELECT 1 FROM odds WHERE event_id = %s AND commence_time = %s LIMIT 1",
                     (event_id, commence_time)
@@ -115,19 +113,26 @@ def fetch_and_store_scores():
             home_team = event.get("home_team")
             away_team = event.get("away_team")
 
-            scores = {s["name"]: int(s["score"]) for s in event["scores"]}
-            home_score = scores.get(home_team)
-            away_score = scores.get(away_team)
+            try:
+                scores = {s["name"]: int(s["score"]) for s in event["scores"]}
+                home_score = scores[home_team]
+                away_score = scores[away_team]
+            except KeyError:
+                print(f"[WARN] Missing score for {home_team} or {away_team} in event {event_id}, skipping.")
+                continue
+
+            now = datetime.utcnow().isoformat()
 
             # UPSERT into scores table
             cursor.execute("""
-                INSERT INTO scores (event_id, home_score, away_score, completed)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO scores (event_id, home_score, away_score, completed, last_updated)
+                VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (event_id) DO UPDATE SET
                     home_score = EXCLUDED.home_score,
                     away_score = EXCLUDED.away_score,
-                    completed = EXCLUDED.completed
-            """, (event_id, home_score, away_score, completed))
+                    completed = EXCLUDED.completed,
+                    last_updated = EXCLUDED.last_updated
+            """, (event_id, home_score, away_score, completed, now))
             updated_count += cursor.rowcount
 
         conn.commit()
@@ -152,5 +157,4 @@ if __name__ == "__main__":
     fetch_and_store_scores()
     start_scheduler()
     app.run(debug=True)
-
 
