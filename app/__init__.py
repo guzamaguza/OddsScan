@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 import os
-from app.utils import fetch_and_store_odds, fetch_and_store_scores, start_scheduler
+from app.utils import fetch_and_store_odds, fetch_and_store_scores, start_scheduler, ODDS_URL, SPORT
 
 # Load environment variables
 load_dotenv()
@@ -29,9 +29,9 @@ def create_app():
     # Trigger data fetching on startup
     with app.app_context():
         print("[DEBUG] Fetching odds and scores on startup...")
-        fetch_and_store_odds(ODDS_URL, SPORT)
-        fetch_and_store_scores()
-        start_scheduler()
+        fetch_and_store_odds(ODDS_URL, SPORT)  # Fetch odds using constants
+        fetch_and_store_scores()  # Fetch scores
+        start_scheduler()  # Start scheduler for recurring fetches
 
     return app
 
