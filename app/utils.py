@@ -37,16 +37,21 @@ def fetch_and_store_odds(url, odds_type):
             timestamp = pd.Timestamp.now().isoformat()
 
             for bookmaker in event.get('bookmakers', []):
-                bookmaker_name = bookmaker.get('title', 'N/A')
+                # Create a valid JSON structure for 'bookmakers'
+                bookmaker_data = [{'title': bookmaker.get('title', 'N/A'), 'key': bookmaker.get('key', 'N/A')}]
+                
                 for market in bookmaker.get('markets', []):
                     market_key = market.get('key', 'N/A')
                     for outcome in market.get('outcomes', []):
                         price = outcome.get('price', None)
                         point = outcome.get('point', None)
 
-                        rows.append((event_id, home_team, away_team, commence_time, bookmaker_name,
-                                     market_key, outcome.get('name', 'N/A'), price, point,
-                                     timestamp, odds_type))
+                        rows.append((
+                            event_id, home_team, away_team, commence_time,
+                            bookmaker_data,  # Now passing valid JSON
+                            market_key, outcome.get('name', 'N/A'), price, point,
+                            timestamp, odds_type
+                        ))
 
         if rows:
             conn = psycopg2.connect(DATABASE_URL)
@@ -137,3 +142,4 @@ def start_scheduler():
     scheduler.add_job(fetch_and_store_scores, 'interval', minutes=30)
     scheduler.start()
     print("🕒 Scheduler started!")
+
