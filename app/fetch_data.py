@@ -1,12 +1,13 @@
 import requests
 import os
 from datetime import datetime
-from app import db
-from app.models import OddsEvent  # Assuming you have a model called OddsEvent
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
 def fetch_odds():
+    from app import db
+    from app.models import OddsEvent  # Make sure your models are correctly set up
+
     url = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
     params = {
         "regions": "us",
