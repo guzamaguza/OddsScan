@@ -10,5 +10,4 @@ certifi
 Flask-Migrate
 dotenv
 apscheduler
-
-
+python-dotenv
