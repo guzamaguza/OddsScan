@@ -1,14 +1,8 @@
 import requests
 import os
 from datetime import datetime
-
-API_KEY = os.getenv("ODDS_API_KEY")
-
-import requests
-import os
-from datetime import datetime
 from app import db
-from app.models import OddsEvent  # Adjust according to your model
+from app.models import OddsEvent, Score  # Make sure you import Score as well
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
@@ -62,12 +56,6 @@ def fetch_odds(db):
                 db.session.add(score)
                 db.session.commit()
                 print(f"[INFO] Inserted Score for Event: {event['id']}")
-        
-        except Exception as e:
-            print(f"[ERROR] Failed to insert event {event['id']}: {e}")
 
-                db.session.commit()
-                print(f"[INFO] Inserted Score for Event: {event['id']}")
-        
         except Exception as e:
             print(f"[ERROR] Failed to insert event {event['id']}: {e}")
