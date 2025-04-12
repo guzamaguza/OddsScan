@@ -1,6 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from apscheduler.schedulers.background import BackgroundScheduler
 from config import Config
+from .fetch_data import fetch_odds  # Import the fetch_odds function from fetch_data.py
 
 db = SQLAlchemy()
 
@@ -10,32 +12,12 @@ def create_app():
 
     db.init_app(app)
 
+    # Set up APScheduler
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(func=fetch_odds, trigger="interval", minutes=10)  # Run every 10 minutes
+    scheduler.start()
+
     from .routes import main
     app.register_blueprint(main)
 
     return app
-
-
-    # Load configs from environment variables
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # Initialize extensions
-    db.init_app(app)
-    migrate.init_app(app, db)
-
-    # Register blueprints
-    from app.routes import main as main_blueprint
-    app.register_blueprint(main_blueprint)
-
-    # Trigger data fetching on startup
-    with app.app_context():
-        print("[DEBUG] Fetching odds and scores on startup...")
-        fetch_and_store_odds(ODDS_URL, SPORT)  # Fetch odds using constants
-        fetch_and_store_scores()  # Fetch scores
-        start_scheduler()  # Start scheduler for recurring fetches
-
-    return app
-
-
-
