@@ -31,15 +31,16 @@ def fetch_odds(db):
 
     for event in data:
         try:
-            event_uuid = str(uuid.uuid4())  # Generate a new UUID for the event if it's a new event
+            event_uuid = event["id"]  # Use the event id from the API as the UUID (no need to generate a new one)
 
             # Check if the event already exists based on the event UUID
-            odds_event = OddsEvent.query.filter_by(id=event_uuid).first()
+            odds_event = OddsEvent.query.filter_by(uuid=event_uuid).first()  # Filter by UUID
 
             if not odds_event:
                 # Insert new event
                 odds_event = OddsEvent(
-                    id=event_uuid,
+                    uuid=event_uuid,  # Use the event UUID from the API
+                    id=event_uuid,  # Store the API's event_id
                     sport_key=event["sport_key"],
                     sport_title=event["sport_title"],
                     commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
@@ -68,7 +69,7 @@ def fetch_odds(db):
 
                 if not existing_score:
                     score = Score(
-                        event_id=event_uuid,
+                        event_id=event_uuid,  # Link score to OddsEvent by event UUID
                         completed=score_data["completed"],
                         commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
                         home_team=event["home_team"],
