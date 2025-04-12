@@ -1,18 +1,20 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from dotenv import load_dotenv
-import os
-from app.utils import fetch_and_store_odds, fetch_and_store_scores, start_scheduler, ODDS_URL, SPORT
-
-# Load environment variables
-load_dotenv()
+from config import Config
 
 db = SQLAlchemy()
-migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
+    app.config.from_object(Config)
+
+    db.init_app(app)
+
+    from .routes import main
+    app.register_blueprint(main)
+
+    return app
+
 
     # Load configs from environment variables
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
