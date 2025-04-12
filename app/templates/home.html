@@ -1,0 +1,20 @@
+<h1>Past Events</h1>
+<ul>
+    {% for event in past_events %}
+        <li>{{ event.home_team }} vs {{ event.away_team }} - {{ event.commence_time }}</li>
+    {% endfor %}
+</ul>
+
+<h1>Ongoing Events</h1>
+<ul>
+    {% for event in ongoing_events %}
+        <li>{{ event.home_team }} vs {{ event.away_team }} - {{ event.commence_time }}</li>
+    {% endfor %}
+</ul>
+
+<h1>Upcoming Events</h1>
+<ul>
+    {% for event in future_events %}
+        <li>{{ event.home_team }} vs {{ event.away_team }} - {{ event.commence_time }}</li>
+    {% endfor %}
+</ul>
