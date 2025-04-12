@@ -13,14 +13,23 @@ def create_app():
 
     db.init_app(app)
 
-    # Set up APScheduler to run fetch_odds every 10 minutes
-    scheduler = BackgroundScheduler(daemon=True)
-    scheduler.add_job(func=lambda: fetch_odds(db), trigger="interval", minutes=10)
-    scheduler.start()
+    # Import and register blueprints
+    from app.routes import main
+    app.register_blueprint(main)
 
-    # Ensure the database is created when the app starts
+    # Ensure the database is created and fetch initial data
     with app.app_context():
-        db.create_all()  # Create all tables
+        db.create_all()
         print("[INFO] Database tables created")
+        fetch_odds(db)  # Optional: Fetch odds once on startup
+
+    # Set up APScheduler to run fetch_odds every 10 minutes
+    def scheduled_job():
+        with app.app_context():
+            fetch_odds(db)
+
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(func=scheduled_job, trigger="interval", minutes=10)
+    scheduler.start()
 
     return app
