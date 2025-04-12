@@ -12,12 +12,17 @@ def create_app():
 
     db.init_app(app)
 
+    with app.app_context():
+        db.create_all()
+        fetch_odds()  # ✅ Run once on startup
+
     # Set up APScheduler
     scheduler = BackgroundScheduler(daemon=True)
-    scheduler.add_job(func=fetch_odds, trigger="interval", minutes=10)  # Run every 10 minutes
+    scheduler.add_job(func=fetch_odds, trigger="interval", minutes=10)
     scheduler.start()
 
     from .routes import main
     app.register_blueprint(main)
 
     return app
+
