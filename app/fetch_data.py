@@ -12,7 +12,8 @@ from app.models import OddsEvent  # Adjust according to your model
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
-def fetch_odds():
+# app/fetch_data.py
+def fetch_odds(db):
     url = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
     params = {
         "regions": "us",
@@ -36,7 +37,6 @@ def fetch_odds():
     # Loop through the events in the data
     for event in data:
         try:
-            # Create a new OddsEvent entry
             odds_event = OddsEvent(
                 id=event['id'],
                 sport_key=event['sport_key'],
@@ -50,17 +50,22 @@ def fetch_odds():
             db.session.commit()
             print(f"[INFO] Inserted OddsEvent: {event['id']}")
 
-            # Optional: If you also want to insert scores related to the event
-            if 'score' in event:  # Ensure score data exists in the event
+            if 'score' in event:
                 score = Score(
                     event_id=event['id'],
                     completed=event['score']['completed'],
                     commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
                     home_team=event['home_team'],
                     away_team=event['away_team'],
-                    scores=event['score']['scores']  # Assuming it's a list of score dicts
+                    scores=event['score']['scores']
                 )
                 db.session.add(score)
+                db.session.commit()
+                print(f"[INFO] Inserted Score for Event: {event['id']}")
+        
+        except Exception as e:
+            print(f"[ERROR] Failed to insert event {event['id']}: {e}")
+
                 db.session.commit()
                 print(f"[INFO] Inserted Score for Event: {event['id']}")
         
