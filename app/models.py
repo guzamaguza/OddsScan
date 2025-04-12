@@ -31,3 +31,21 @@ class Score(db.Model):
 
     def __repr__(self):
         return f"<Score(event_id={self.event_id}, completed={self.completed}, created_at={self.created_at})>"
+
+
+class RawOddsEntry(db.Model):
+    __tablename__ = 'raw_odds_entries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String, nullable=False)
+    sport_key = db.Column(db.String, nullable=False)
+    sport_title = db.Column(db.String, nullable=False)
+    commence_time = db.Column(db.DateTime, nullable=False)
+    home_team = db.Column(db.String, nullable=False)
+    away_team = db.Column(db.String, nullable=False)
+    bookmaker = db.Column(db.String, nullable=False)
+    markets = db.Column(JSON, nullable=True)
+    pulled_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<RawOddsEntry(event_id={self.event_id}, bookmaker={self.bookmaker}, pulled_at={self.pulled_at})>"
