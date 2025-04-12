@@ -13,6 +13,7 @@ class OddsEvent(db.Model):
     away_team = db.Column(db.String, nullable=False)
     bookmakers = db.Column(JSON, nullable=True)  # store full JSON response
 
+
 class Score(db.Model):
     __tablename__ = 'scores'
 
@@ -24,12 +25,7 @@ class Score(db.Model):
     away_team = db.Column(db.String, nullable=False)
     scores = db.Column(JSON, nullable=True)  # stores the list of score dicts
 
-    # Optional relationship (one-to-one or many-to-one)
     event = db.relationship('OddsEvent', backref=db.backref('score', uselist=False))
 
-
-    # Relationship to Odds
-    odds_entry = db.relationship("Odds", back_populates="score", uselist=False)
-
     def __repr__(self):
-        return f"<Score(event_id={self.event_id}, completed={self.completed}, home_score={self.home_score}, away_score={self.away_score})>"
+        return f"<Score(event_id={self.event_id}, completed={self.completed})>"
