@@ -16,7 +16,7 @@ class Odds(db.Model):
     commence_time = db.Column(db.DateTime, nullable=False)
     home_team = db.Column(db.String, nullable=False)
     away_team = db.Column(db.String, nullable=False)
-    bookmakers = db.Column(db.JSONB, nullable=True)  # Use JSONB instead of JSON
+    bookmakers = db.Column(JSONB, nullable=True)
     market = db.Column(db.String, nullable=False)  # Added market column
     outcome = db.Column(db.String, nullable=False)  # Added outcome column
     link = db.Column(db.String, nullable=True)
