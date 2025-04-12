@@ -32,40 +32,37 @@ def fetch_odds():
         return
 
     print(f"[INFO] {len(data)} events fetched.")
-    
-    # Assuming you have a model called OddsEvent, for example:
+
+    # Loop through the events in the data
     for event in data:
         try:
+            # Create a new OddsEvent entry
             odds_event = OddsEvent(
-                event_id=event['id'],  # Adjust according to your data structure
+                id=event['id'],
+                sport_key=event['sport_key'],
+                sport_title=event['sport_title'],
+                commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
                 home_team=event['home_team'],
                 away_team=event['away_team'],
-                odds=event['odds'],
-                timestamp=datetime.now()
+                bookmakers=event['bookmakers']  # Full JSON response for bookmakers
             )
             db.session.add(odds_event)
             db.session.commit()
-            print(f"[INFO] Inserted event: {event['id']}")
-        except Exception as e:
-            print(f"[ERROR] Failed to insert event: {e}")
+            print(f"[INFO] Inserted OddsEvent: {event['id']}")
 
-
-    data = response.json()
-
-    with db.session.begin():  # Ensures that the session is committed at the end
-        for item in data:
-            event = OddsEvent.query.get(item["id"])
-            if not event:  # If the event doesn't exist, create a new one
-                event = OddsEvent(
-                    id=item["id"],
-                    sport_key=item["sport_key"],
-                    sport_title=item["sport_title"],
-                    commence_time=datetime.fromisoformat(item["commence_time"]),
-                    home_team=item["home_team"],
-                    away_team=item["away_team"],
-                    bookmakers=item["bookmakers"],
+            # Optional: If you also want to insert scores related to the event
+            if 'score' in event:  # Ensure score data exists in the event
+                score = Score(
+                    event_id=event['id'],
+                    completed=event['score']['completed'],
+                    commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
+                    home_team=event['home_team'],
+                    away_team=event['away_team'],
+                    scores=event['score']['scores']  # Assuming it's a list of score dicts
                 )
-                db.session.add(event)
-
-        db.session.commit()  # Commit all the changes
-        print(f"[INFO] Inserted {len(data)} events.")
+                db.session.add(score)
+                db.session.commit()
+                print(f"[INFO] Inserted Score for Event: {event['id']}")
+        
+        except Exception as e:
+            print(f"[ERROR] Failed to insert event {event['id']}: {e}")
