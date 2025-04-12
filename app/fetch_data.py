@@ -1,14 +1,13 @@
 import requests
 import os
 from datetime import datetime
-from app import db
-from app.models import OddsEvent, Score  # Make sure you import Score as well
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
-# app/fetch_data.py
 def fetch_odds(db):
-    url = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
+    from app.models import OddsEvent, Score  # Import inside function to avoid circular issues
+
+    url = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
     params = {
         "regions": "us",
         "markets": "h2h",
@@ -28,7 +27,6 @@ def fetch_odds(db):
 
     print(f"[INFO] {len(data)} events fetched.")
 
-    # Loop through the events in the data
     for event in data:
         try:
             odds_event = OddsEvent(
@@ -38,7 +36,7 @@ def fetch_odds(db):
                 commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
                 home_team=event['home_team'],
                 away_team=event['away_team'],
-                bookmakers=event['bookmakers']  # Full JSON response for bookmakers
+                bookmakers=event['bookmakers']
             )
             db.session.add(odds_event)
             db.session.commit()
