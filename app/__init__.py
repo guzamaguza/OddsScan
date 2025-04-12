@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 from config import Config
 from .fetch_data import fetch_odds  # Import the fetch_odds function from fetch_data.py
+from .routes import main  # Import the main blueprint
 
 db = SQLAlchemy()
 
@@ -11,6 +12,9 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+
+    # Register the main blueprint
+    app.register_blueprint(main)
 
     # Set up APScheduler to run fetch_odds every 10 minutes
     scheduler = BackgroundScheduler(daemon=True)
@@ -23,9 +27,3 @@ def create_app():
         print("[INFO] Database tables created")
 
     return app
-
-
-
-
-
-
