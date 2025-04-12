@@ -22,4 +22,5 @@ def fetch_odds():
 
     data = response.json()
 
-        print(f"[INFO] Inserted {len(data)} events.")
+    print(f"[INFO] Inserted {len(data)} events.")
+
