@@ -1,35 +1,41 @@
-from app import create_app, db
-from app.models import Sport, OddsEvent
-from app.utils import get_sports, get_odds
+import requests
+import os
+from app import db
+from app.models import OddsEvent  # And Score if needed
 from datetime import datetime
 
-app = create_app()
+API_KEY = os.getenv("ODDS_API_KEY")
 
-with app.app_context():
-    sports = get_sports()
-    for sport in sports:
-        db.session.merge(Sport(
-            id=sport['key'],
-            key=sport['key'],
-            group=sport['group'],
-            title=sport['title'],
-            active=sport['active'],
-            has_outrights=sport['has_outrights']
-        ))
-    db.session.commit()
+def fetch_odds():
+    url = f"https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
+    params = {
+        "regions": "us",
+        "markets": "h2h",
+        "oddsFormat": "decimal",
+        "apiKey": API_KEY,
+    }
 
-    for sport in sports:
-        if sport['active']:
-            odds = get_odds(sport['key'])
-            for event in odds:
-                db.session.merge(OddsEvent(
-                    id=event['id'],
-                    sport_key=event['sport_key'],
-                    sport_title=event['sport_title'],
-                    commence_time=datetime.fromisoformat(event['commence_time'].replace("Z", "+00:00")),
-                    home_team=event['home_team'],
-                    away_team=event['away_team'],
-                    bookmakers=event['bookmakers']
-                ))
-    db.session.commit()
+    response = requests.get(url, params=params)
+    if response.status_code != 200:
+        print("[ERROR]", response.json())
+        return
+
+    data = response.json()
+
+    with app.app_context():
+        for item in data:
+            event = OddsEvent.query.get(item["id"])
+            if not event:
+                event = OddsEvent(
+                    id=item["id"],
+                    sport_key=item["sport_key"],
+                    sport_title=item["sport_title"],
+                    commence_time=datetime.fromisoformat(item["commence_time"]),
+                    home_team=item["home_team"],
+                    away_team=item["away_team"],
+                    bookmakers=item["bookmakers"],
+                )
+                db.session.add(event)
+        db.session.commit()
+        print(f"[INFO] Inserted {len(data)} events.")
 
