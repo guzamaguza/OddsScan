@@ -11,3 +11,5 @@ Flask-Migrate
 dotenv
 apscheduler
 python-dotenv
+pip install APScheduler
+
