@@ -1,11 +1,12 @@
 import requests
 import os
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
 
 API_KEY = os.getenv("ODDS_API_KEY")
 
 def fetch_odds(db):
-    from app.models import OddsEvent, Score  # Import inside function to avoid circular issues
+    from app.models import OddsEvent, Score  # Avoid circular import issues
 
     url = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
     params = {
@@ -29,39 +30,59 @@ def fetch_odds(db):
 
     for event in data:
         try:
+            event_id = event["id"]
+
             # Check if the event already exists
-            odds_event = OddsEvent.query.filter_by(id=event['id']).first()
+            odds_event = OddsEvent.query.filter_by(id=event_id).first()
+
             if not odds_event:
-                # If event doesn't exist, insert it
+                # Insert new event
                 odds_event = OddsEvent(
-                    id=event['id'],
-                    sport_key=event['sport_key'],
-                    sport_title=event['sport_title'],
-                    commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
-                    home_team=event['home_team'],
-                    away_team=event['away_team'],
-                    bookmakers=event['bookmakers']
+                    id=event_id,
+                    sport_key=event["sport_key"],
+                    sport_title=event["sport_title"],
+                    commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                    home_team=event["home_team"],
+                    away_team=event["away_team"],
+                    bookmakers=event["bookmakers"],
                 )
                 db.session.add(odds_event)
-                db.session.commit()
-                print(f"[INFO] Inserted OddsEvent: {event['id']}")
+                print(f"[INFO] Inserted new OddsEvent: {event_id}")
             else:
-                print(f"[INFO] Event {event['id']} already exists. Skipping insert.")
+                # Update the existing bookmakers info
+                odds_event.bookmakers = event["bookmakers"]
+                odds_event.updated_at = datetime.utcnow()
+                print(f"[INFO] Updated OddsEvent: {event_id}")
 
-            # Check if there is score data to insert
-            if 'score' in event:
-                # Insert the score record (even if the event already exists)
-                score = Score(
-                    event_id=event['id'],
-                    completed=event['score']['completed'],
-                    commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
-                    home_team=event['home_team'],
-                    away_team=event['away_team'],
-                    scores=event['score']['scores']
-                )
-                db.session.add(score)
-                db.session.commit()
-                print(f"[INFO] Inserted Score for Event: {event['id']}")
+            db.session.commit()
 
+            # Handle score data (if any)
+            if "score" in event:
+                score_data = event["score"]
+                # Optional: prevent duplicate score inserts if you want
+                existing_score = Score.query.filter_by(
+                    event_id=event_id,
+                    completed=score_data["completed"]
+                ).first()
+
+                if not existing_score:
+                    score = Score(
+                        event_id=event_id,
+                        completed=score_data["completed"],
+                        commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                        home_team=event["home_team"],
+                        away_team=event["away_team"],
+                        scores=score_data["scores"]
+                    )
+                    db.session.add(score)
+                    db.session.commit()
+                    print(f"[INFO] Inserted new Score for Event: {event_id}")
+                else:
+                    print(f"[INFO] Score for Event {event_id} already exists with same status.")
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            print(f"[ERROR] Database error for event {event_id}: {e}")
         except Exception as e:
-            print(f"[ERROR] Failed to insert event {event['id']}: {e}")
+            print(f"[ERROR] Failed to process event {event.get('id', 'unknown')}: {e}")
+
