@@ -22,19 +22,4 @@ def fetch_odds():
 
     data = response.json()
 
-    with app.app_context():
-        for item in data:
-            event = OddsEvent.query.get(item["id"])
-            if not event:
-                event = OddsEvent(
-                    id=item["id"],
-                    sport_key=item["sport_key"],
-                    sport_title=item["sport_title"],
-                    commence_time=datetime.fromisoformat(item["commence_time"]),
-                    home_team=item["home_team"],
-                    away_team=item["away_team"],
-                    bookmakers=item["bookmakers"],
-                )
-                db.session.add(event)
-        db.session.commit()
         print(f"[INFO] Inserted {len(data)} events.")
