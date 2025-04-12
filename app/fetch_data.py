@@ -29,20 +29,28 @@ def fetch_odds(db):
 
     for event in data:
         try:
-            odds_event = OddsEvent(
-                id=event['id'],
-                sport_key=event['sport_key'],
-                sport_title=event['sport_title'],
-                commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
-                home_team=event['home_team'],
-                away_team=event['away_team'],
-                bookmakers=event['bookmakers']
-            )
-            db.session.add(odds_event)
-            db.session.commit()
-            print(f"[INFO] Inserted OddsEvent: {event['id']}")
+            # Check if the event already exists
+            odds_event = OddsEvent.query.filter_by(id=event['id']).first()
+            if not odds_event:
+                # If event doesn't exist, insert it
+                odds_event = OddsEvent(
+                    id=event['id'],
+                    sport_key=event['sport_key'],
+                    sport_title=event['sport_title'],
+                    commence_time=datetime.strptime(event['commence_time'], "%Y-%m-%dT%H:%M:%SZ"),
+                    home_team=event['home_team'],
+                    away_team=event['away_team'],
+                    bookmakers=event['bookmakers']
+                )
+                db.session.add(odds_event)
+                db.session.commit()
+                print(f"[INFO] Inserted OddsEvent: {event['id']}")
+            else:
+                print(f"[INFO] Event {event['id']} already exists. Skipping insert.")
 
+            # Check if there is score data to insert
             if 'score' in event:
+                # Insert the score record (even if the event already exists)
                 score = Score(
                     event_id=event['id'],
                     completed=event['score']['completed'],
