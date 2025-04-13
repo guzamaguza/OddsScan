@@ -30,7 +30,7 @@ def create_app():
             fetch_odds(db)
 
     scheduler = BackgroundScheduler(daemon=True)
-    scheduler.add_job(func=scheduled_job, trigger="interval", minutes=30)
+    scheduler.add_job(func=scheduled_job, trigger="interval", minutes=10)
     scheduler.start()
 
     return app
