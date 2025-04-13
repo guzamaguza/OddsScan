@@ -35,35 +35,32 @@ def fetch_odds(db):
 
     for event in data:
         try:
-            event_uuid = event.get("id")
-            
-            if not event_uuid:
-                print(f"[ERROR] Missing event UUID for event: {event}")
-                continue  # Skip this event if no UUID is available
+            event_uuid = str(uuid.uuid4())  # Generate a new UUID for each event insert
             
             # Log event data
             print(f"[INFO] Processing event: {event_uuid}")
 
             # Always insert new OddsEvent, bypassing update
             odds_event = OddsEvent(
-                uuid=event_uuid,  # Use the event UUID from the API
-                id=event_uuid,  # Store the API's event_id
+                uuid=event_uuid,  # Generate a new UUID each time
+                id=event["id"],  # Store the API's event_id
                 sport_key=event["sport_key"],
                 sport_title=event["sport_title"],
                 commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
                 home_team=event["home_team"],
                 away_team=event["away_team"],
                 bookmakers=event["bookmakers"],
+                created_at=datetime.utcnow()  # Add current timestamp for created_at
             )
             db.session.add(odds_event)
-            print(f"[INFO] Inserted new OddsEvent: {event_uuid}")
+            print(f"[INFO] Inserted new OddsEvent with UUID: {event_uuid}")
 
             # Handle score data (if any)
             if "score" in event:
                 score_data = event["score"]
                 # Insert new score even if it already exists (no check for duplicates)
                 score = Score(
-                    event_id=event_uuid,  # Link score to OddsEvent by event UUID
+                    event_id=event_uuid,  # Link score to OddsEvent by new UUID
                     completed=score_data["completed"],
                     commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
                     home_team=event["home_team"],
