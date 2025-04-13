@@ -25,6 +25,7 @@ def create_app():
 
     # Set up APScheduler to run fetch_odds every 10 minutes
     def scheduled_job():
+        print("[INFO] Scheduled job triggered")
         with app.app_context():
             fetch_odds(db)
 
