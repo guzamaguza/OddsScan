@@ -18,20 +18,31 @@ def fetch_odds(db):
     }
 
     response = requests.get(url, params=params)
+    
+    # Enhanced error handling for API request
     if response.status_code != 200:
-        print("[ERROR] Unable to fetch data:", response.json())
+        print(f"[ERROR] Unable to fetch data. Status Code: {response.status_code}, Response: {response.text}")
         return
 
     data = response.json()
+    
+    # Check if data is empty and log the response
     if not data:
-        print("[INFO] No data returned from API.")
+        print(f"[INFO] No data returned from API. Response: {response.json()}")
         return
 
     print(f"[INFO] {len(data)} events fetched.")
 
     for event in data:
         try:
-            event_uuid = event["id"]  # Use the event id from the API as the UUID (no need to generate a new one)
+            event_uuid = event.get("id")
+            
+            if not event_uuid:
+                print(f"[ERROR] Missing event UUID for event: {event}")
+                continue  # Skip this event if no UUID is available
+            
+            # Log event data
+            print(f"[INFO] Processing event: {event_uuid}")
 
             # Always insert new OddsEvent, bypassing update
             odds_event = OddsEvent(
@@ -46,7 +57,6 @@ def fetch_odds(db):
             )
             db.session.add(odds_event)
             print(f"[INFO] Inserted new OddsEvent: {event_uuid}")
-            db.session.commit()
 
             # Handle score data (if any)
             if "score" in event:
@@ -61,12 +71,14 @@ def fetch_odds(db):
                     scores=score_data["scores"]
                 )
                 db.session.add(score)
-                db.session.commit()
                 print(f"[INFO] Inserted new Score for Event: {event_uuid}")
+
+            # Commit both OddsEvent and Score at once
+            db.session.commit()
+            print(f"[INFO] Committed new OddsEvent and Score for Event: {event_uuid}")
 
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"[ERROR] Database error for event {event_uuid}: {e}")
         except Exception as e:
             print(f"[ERROR] Failed to process event {event.get('id', 'unknown')}: {e}")
-
