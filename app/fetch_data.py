@@ -33,57 +33,40 @@ def fetch_odds(db):
         try:
             event_uuid = event["id"]  # Use the event id from the API as the UUID (no need to generate a new one)
 
-            # Check if the event already exists based on the event UUID
-            odds_event = OddsEvent.query.filter_by(uuid=event_uuid).first()  # Filter by UUID
-
-            if not odds_event:
-                # Insert new event
-                odds_event = OddsEvent(
-                    uuid=event_uuid,  # Use the event UUID from the API
-                    id=event_uuid,  # Store the API's event_id
-                    sport_key=event["sport_key"],
-                    sport_title=event["sport_title"],
-                    commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                    home_team=event["home_team"],
-                    away_team=event["away_team"],
-                    bookmakers=event["bookmakers"],
-                )
-                db.session.add(odds_event)
-                print(f"[INFO] Inserted new OddsEvent: {event_uuid}")
-            else:
-                # Update the existing bookmakers info
-                odds_event.bookmakers = event["bookmakers"]
-                odds_event.updated_at = datetime.utcnow()
-                print(f"[INFO] Updated OddsEvent: {event_uuid}")
-
+            # Always insert new OddsEvent, bypassing update
+            odds_event = OddsEvent(
+                uuid=event_uuid,  # Use the event UUID from the API
+                id=event_uuid,  # Store the API's event_id
+                sport_key=event["sport_key"],
+                sport_title=event["sport_title"],
+                commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                home_team=event["home_team"],
+                away_team=event["away_team"],
+                bookmakers=event["bookmakers"],
+            )
+            db.session.add(odds_event)
+            print(f"[INFO] Inserted new OddsEvent: {event_uuid}")
             db.session.commit()
 
             # Handle score data (if any)
             if "score" in event:
                 score_data = event["score"]
-                # Optional: prevent duplicate score inserts if you want
-                existing_score = Score.query.filter_by(
-                    event_id=event_uuid,
-                    completed=score_data["completed"]
-                ).first()
-
-                if not existing_score:
-                    score = Score(
-                        event_id=event_uuid,  # Link score to OddsEvent by event UUID
-                        completed=score_data["completed"],
-                        commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                        home_team=event["home_team"],
-                        away_team=event["away_team"],
-                        scores=score_data["scores"]
-                    )
-                    db.session.add(score)
-                    db.session.commit()
-                    print(f"[INFO] Inserted new Score for Event: {event_uuid}")
-                else:
-                    print(f"[INFO] Score for Event {event_uuid} already exists with same status.")
+                # Insert new score even if it already exists (no check for duplicates)
+                score = Score(
+                    event_id=event_uuid,  # Link score to OddsEvent by event UUID
+                    completed=score_data["completed"],
+                    commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                    home_team=event["home_team"],
+                    away_team=event["away_team"],
+                    scores=score_data["scores"]
+                )
+                db.session.add(score)
+                db.session.commit()
+                print(f"[INFO] Inserted new Score for Event: {event_uuid}")
 
         except SQLAlchemyError as e:
             db.session.rollback()
             print(f"[ERROR] Database error for event {event_uuid}: {e}")
         except Exception as e:
             print(f"[ERROR] Failed to process event {event.get('id', 'unknown')}: {e}")
+
