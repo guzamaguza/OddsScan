@@ -38,7 +38,6 @@ def fetch_odds(db):
                 if existing_event:
                     # Update existing event
                     existing_event.bookmakers = event["bookmakers"]
-                    existing_event.last_updated = datetime.utcnow()
                     print(f"[INFO] Updated existing OddsEvent: {existing_event.uuid}")
                 else:
                     # Create new event
@@ -70,9 +69,6 @@ def fetch_scores(db):
     """Fetch and store scores data from the API"""
     from app.models import OddsEvent, Score
 
-    # Get events from the last 24 hours that don't have scores or need updating
-    cutoff_time = datetime.utcnow() - timedelta(hours=24)
-    
     url = f"{BASE_URL}/sports/basketball_nba/scores"
     params = {
         "daysFrom": 1,
@@ -101,20 +97,18 @@ def fetch_scores(db):
 
                 # Check if score already exists
                 existing_score = Score.query.filter_by(
-                    api_event_id=score_data["id"]
+                    event_id=odds_event.uuid
                 ).first()
 
                 if existing_score:
                     # Update existing score
                     existing_score.completed = score_data["completed"]
                     existing_score.scores = score_data["scores"]
-                    existing_score.last_updated = datetime.utcnow()
                     print(f"[INFO] Updated existing Score for event: {odds_event.uuid}")
                 else:
                     # Create new score
                     new_score = Score(
                         event_id=odds_event.uuid,
-                        api_event_id=score_data["id"],
                         completed=score_data["completed"],
                         commence_time=datetime.strptime(score_data["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
                         home_team=score_data["home_team"],
