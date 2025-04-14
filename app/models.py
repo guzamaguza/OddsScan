@@ -15,7 +15,6 @@ class OddsEvent(db.Model):
     away_team = db.Column(db.String, nullable=False)
     bookmakers = db.Column(JSON, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f"<OddsEvent(uuid={self.uuid}, home_team={self.home_team}, away_team={self.away_team})>"
@@ -25,16 +24,13 @@ class Score(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.String, db.ForeignKey('odds_events.uuid'), nullable=False)
-    api_event_id = db.Column(db.String, nullable=False)  # Store the API's event ID for easier matching
     completed = db.Column(db.Boolean, nullable=False)
     commence_time = db.Column(db.DateTime, nullable=False)
     home_team = db.Column(db.String, nullable=False)
     away_team = db.Column(db.String, nullable=False)
     scores = db.Column(JSON, nullable=True)
-    last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     event = db.relationship('OddsEvent', backref=db.backref('scores', lazy=True))
 
     def __repr__(self):
-        return f"<Score(event_id={self.event_id}, completed={self.completed}, last_updated={self.last_updated})>"
+        return f"<Score(event_id={self.event_id}, completed={self.completed})"
