@@ -1,15 +1,17 @@
 import requests
 import os
-import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import and_
 
 API_KEY = os.getenv("ODDS_API_KEY")
+BASE_URL = "https://api.the-odds-api.com/v4"
 
 def fetch_odds(db):
-    from app.models import OddsEvent, Score  # Avoid circular import issues
+    """Fetch and store odds data from the API"""
+    from app.models import OddsEvent
 
-    url = "https://api.the-odds-api.com/v4/sports/basketball_nba/odds"
+    url = f"{BASE_URL}/sports/basketball_nba/odds"
     params = {
         "regions": "us",
         "markets": "h2h",
@@ -17,65 +19,126 @@ def fetch_odds(db):
         "apiKey": API_KEY,
     }
 
-    response = requests.get(url, params=params)
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if not data:
+            print("[INFO] No odds data returned from API")
+            return
+
+        print(f"[INFO] Fetched {len(data)} odds events")
+
+        for event in data:
+            try:
+                # Check if event already exists
+                existing_event = OddsEvent.query.filter_by(id=event["id"]).first()
+                
+                if existing_event:
+                    # Update existing event
+                    existing_event.bookmakers = event["bookmakers"]
+                    existing_event.last_updated = datetime.utcnow()
+                    print(f"[INFO] Updated existing OddsEvent: {existing_event.uuid}")
+                else:
+                    # Create new event
+                    new_event = OddsEvent(
+                        id=event["id"],
+                        sport_key=event["sport_key"],
+                        sport_title=event["sport_title"],
+                        commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                        home_team=event["home_team"],
+                        away_team=event["away_team"],
+                        bookmakers=event["bookmakers"]
+                    )
+                    db.session.add(new_event)
+                    print(f"[INFO] Created new OddsEvent: {new_event.uuid}")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to process odds event {event.get('id', 'unknown')}: {e}")
+                db.session.rollback()
+
+        db.session.commit()
+        
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Failed to fetch odds data: {e}")
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in fetch_odds: {e}")
+        db.session.rollback()
+
+def fetch_scores(db):
+    """Fetch and store scores data from the API"""
+    from app.models import OddsEvent, Score
+
+    # Get events from the last 24 hours that don't have scores or need updating
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
     
-    # Enhanced error handling for API request
-    if response.status_code != 200:
-        print(f"[ERROR] Unable to fetch data. Status Code: {response.status_code}, Response: {response.text}")
-        return
+    url = f"{BASE_URL}/sports/basketball_nba/scores"
+    params = {
+        "daysFrom": 1,
+        "apiKey": API_KEY,
+    }
 
-    data = response.json()
-    
-    # Check if data is empty and log the response
-    if not data:
-        print(f"[INFO] No data returned from API. Response: {response.json()}")
-        return
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        if not data:
+            print("[INFO] No scores data returned from API")
+            return
 
-    print(f"[INFO] {len(data)} events fetched.")
+        print(f"[INFO] Fetched {len(data)} scores")
 
-    for event in data:
-        try:
-            event_uuid = str(uuid.uuid4())  # Generate a new UUID for each event insert
-            
-            # Log event data
-            print(f"[INFO] Processing event: {event_uuid}")
+        for score_data in data:
+            try:
+                # Find the corresponding odds event
+                odds_event = OddsEvent.query.filter_by(id=score_data["id"]).first()
+                
+                if not odds_event:
+                    print(f"[WARN] No matching odds event found for score {score_data['id']}")
+                    continue
 
-            # Always insert new OddsEvent, bypassing update
-            odds_event = OddsEvent(
-                uuid=event_uuid,  # Generate a new UUID each time
-                id=event["id"],  # Store the API's event_id
-                sport_key=event["sport_key"],
-                sport_title=event["sport_title"],
-                commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                home_team=event["home_team"],
-                away_team=event["away_team"],
-                bookmakers=event["bookmakers"],
-                created_at=datetime.utcnow()  # Add current timestamp for created_at
-            )
-            db.session.add(odds_event)
-            print(f"[INFO] Inserted new OddsEvent with UUID: {event_uuid}")
+                # Check if score already exists
+                existing_score = Score.query.filter_by(
+                    api_event_id=score_data["id"]
+                ).first()
 
-            # Handle score data (if any)
-            if "score" in event:
-                score_data = event["score"]
-                # Insert new score even if it already exists (no check for duplicates)
-                score = Score(
-                    event_id=event_uuid,  # Link score to OddsEvent by new UUID
-                    completed=score_data["completed"],
-                    commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                    home_team=event["home_team"],
-                    away_team=event["away_team"],
-                    scores=score_data["scores"]
-                )
-                db.session.add(score)
-                print(f"[INFO] Inserted new Score for Event: {event_uuid}")
+                if existing_score:
+                    # Update existing score
+                    existing_score.completed = score_data["completed"]
+                    existing_score.scores = score_data["scores"]
+                    existing_score.last_updated = datetime.utcnow()
+                    print(f"[INFO] Updated existing Score for event: {odds_event.uuid}")
+                else:
+                    # Create new score
+                    new_score = Score(
+                        event_id=odds_event.uuid,
+                        api_event_id=score_data["id"],
+                        completed=score_data["completed"],
+                        commence_time=datetime.strptime(score_data["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                        home_team=score_data["home_team"],
+                        away_team=score_data["away_team"],
+                        scores=score_data["scores"]
+                    )
+                    db.session.add(new_score)
+                    print(f"[INFO] Created new Score for event: {odds_event.uuid}")
 
-            # Commit both OddsEvent and Score at once
-            db.session.commit()
-            print(f"[INFO] Committed new OddsEvent and Score for Event: {event_uuid}")
+            except Exception as e:
+                print(f"[ERROR] Failed to process score {score_data.get('id', 'unknown')}: {e}")
+                db.session.rollback()
 
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            print(f"[ERROR] Database error for event {event_uuid}: {e}")
-        except Exception as e:
-            print(f"[ERROR] Failed to process event {event.get('id', 'unknown')}: {e}")
+        db.session.commit()
+        
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Failed to fetch scores data: {e}")
+    except Exception as e:
+        print(f"[ERROR] Unexpected error in fetch_scores: {e}")
+        db.session.rollback()
+
+def fetch_all_data(db):
+    """Fetch both odds and scores data"""
+    print("[INFO] Starting data fetch...")
+    fetch_odds(db)
+    fetch_scores(db)
+    print("[INFO] Data fetch completed")
