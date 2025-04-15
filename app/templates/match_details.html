@@ -59,8 +59,9 @@
             <h2>Score</h2>
             <p>Status: {{ 'Completed' if score.completed else 'In Progress' }}</p>
             {% if score.scores %}
-                <p>{{ event.home_team }}: {{ score.scores.get(event.home_team, 'N/A') }}</p>
-                <p>{{ event.away_team }}: {{ score.scores.get(event.away_team, 'N/A') }}</p>
+                {% for team_score in score.scores %}
+                    <p>{{ team_score.name }}: {{ team_score.score }}</p>
+                {% endfor %}
             {% else %}
                 <p>No score available yet</p>
             {% endif %}
