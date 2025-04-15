@@ -1,4 +1,4 @@
-rom flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify
 from datetime import datetime, timedelta, timezone
 from app.models import OddsEvent, Score
 from sqlalchemy import func
