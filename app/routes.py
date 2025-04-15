@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+rom flask import Blueprint, render_template, jsonify
 from datetime import datetime, timedelta, timezone
 from app.models import OddsEvent, Score
 from sqlalchemy import func
@@ -37,9 +37,10 @@ def home():
                 unique_events.append(event)
         return unique_events
     
-    past_events = remove_duplicates(past_events)
-    ongoing_events = remove_duplicates(ongoing_events)
-    upcoming_events = remove_duplicates(upcoming_events)
+    # Remove duplicates and sort each category
+    past_events = sorted(remove_duplicates(past_events), key=lambda x: x.commence_time, reverse=True)
+    ongoing_events = sorted(remove_duplicates(ongoing_events), key=lambda x: x.commence_time)
+    upcoming_events = sorted(remove_duplicates(upcoming_events), key=lambda x: x.commence_time)
     
     # Debug logging
     print(f"Current time (UTC): {now}")
