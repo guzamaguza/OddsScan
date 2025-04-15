@@ -99,6 +99,8 @@
         fetch('/match/{{ event.uuid }}/odds-history')
             .then(response => response.json())
             .then(data => {
+                console.log('Received data:', data); // Debug log
+                
                 const ctx = document.getElementById('oddsChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'line',
@@ -107,7 +109,10 @@
                         datasets: [
                             {
                                 label: '{{ event.home_team }}',
-                                data: data.home_odds,
+                                data: data.home_odds.map((value, index) => ({
+                                    x: data.labels[index],
+                                    y: value
+                                })),
                                 borderColor: 'rgb(75, 192, 192)',
                                 backgroundColor: 'rgba(75, 192, 192, 0.1)',
                                 tension: 0.1,
@@ -118,7 +123,10 @@
                             },
                             {
                                 label: '{{ event.away_team }}',
-                                data: data.away_odds,
+                                data: data.away_odds.map((value, index) => ({
+                                    x: data.labels[index],
+                                    y: value
+                                })),
                                 borderColor: 'rgb(255, 99, 132)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.1)',
                                 tension: 0.1,
@@ -129,7 +137,10 @@
                             },
                             {
                                 label: 'Draw',
-                                data: data.draw_odds,
+                                data: data.draw_odds.map((value, index) => ({
+                                    x: data.labels[index],
+                                    y: value
+                                })),
                                 borderColor: 'rgb(54, 162, 235)',
                                 backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                 tension: 0.1,
@@ -194,6 +205,13 @@
                                 }
                             },
                             x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'minute',
+                                    displayFormats: {
+                                        minute: 'HH:mm'
+                                    }
+                                },
                                 title: {
                                     display: true,
                                     text: 'Time'
@@ -206,6 +224,9 @@
                         }
                     }
                 });
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
             });
     </script>
 </body>
