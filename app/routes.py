@@ -72,26 +72,13 @@ def odds_history(uuid):
         'home_odds': [],
         'away_odds': [],
         'draw_odds': [],
-        'annotation': {
-            'annotations': {
-                'line1': {
-                    'type': 'line',
-                    'xMin': f'{event.commence_time.strftime("%Y-%m-%d %H:%M:%S")}',
-                    'xMax': f'{event.commence_time.strftime("%Y-%m-%d %H:%M:%S")}',
-                    'borderColor': 'rgb(255, 0, 0)',
-                    'borderWidth': 2,
-                    'label': {
-                        'content': 'Game Start',
-                        'enabled': True,
-                        'position': 'top'
-                    }
-                }
-            }
-        }
+        'commence_time': event.commence_time.strftime('%Y-%m-%d %H:%M:%S')
     }
     
     for event in historical_events:
-        chart_data['labels'].append(event.created_at.strftime('%Y-%m-%d %H:%M:%S'))
+        # Convert created_at to UTC for consistent comparison
+        created_at_utc = event.created_at.astimezone(datetime.timezone.utc)
+        chart_data['labels'].append(created_at_utc.strftime('%Y-%m-%d %H:%M:%S'))
         
         # Get the best odds for each outcome
         home_odds = None
