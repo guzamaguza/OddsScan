@@ -1,3 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .match-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .odds-section, .score-section, .chart-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .bookmaker {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="match-header">
+            <h1>{{ event.home_team }} vs {{ event.away_team }}</h1>
+            <p>Time: {{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            <p>Sport: {{ event.sport_title }}</p>
+        </div>
+
+        {% if score %}
+        <div class="score-section">
+            <h2>Score</h2>
+            <p>Status: {{ 'Completed' if score.completed else 'In Progress' }}</p>
+            {% if score.scores %}
+                <p>{{ event.home_team }}: {{ score.scores.get(event.home_team, 'N/A') }}</p>
+                <p>{{ event.away_team }}: {{ score.scores.get(event.away_team, 'N/A') }}</p>
+            {% else %}
+                <p>No score available yet</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="chart-section">
+            <h2>Odds History</h2>
+            <div class="chart-container">
+                <canvas id="oddsChart"></canvas>
+            </div>
+        </div>
+
+        {% if event.bookmakers %}
+        <div class="odds-section">
+            <h2>Current Odds</h2>
+            {% for bookmaker in event.bookmakers %}
+                <div class="bookmaker">
+                    <h3>{{ bookmaker.title }}</h3>
+                    {% for market in bookmaker.markets %}
+                        {% if market.key == 'h2h' %}
+                            {% for outcome in market.outcomes %}
+                                <p>{{ outcome.name }}: {{ outcome.price }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <a href="{{ url_for('main.home') }}" class="back-link">Back to Matches</a>
+    </div>
+
     <script>
         // Fetch odds history data
         fetch('/match/{{ event.uuid }}/odds-history')
@@ -154,3 +250,5 @@
                 console.error('Error fetching data:', error);
             });
     </script>
+</body>
+</html>
