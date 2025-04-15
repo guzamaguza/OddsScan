@@ -2,8 +2,10 @@
 <ul>
     {% for event in past_events %}
         <li>
-            <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
-            <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
+                <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            </a>
         </li>
     {% endfor %}
 </ul>
@@ -12,8 +14,10 @@
 <ul>
     {% for event in ongoing_events %}
         <li>
-            <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
-            <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
+                <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            </a>
         </li>
     {% endfor %}
 </ul>
@@ -22,9 +26,10 @@
 <ul>
     {% for event in future_events %}
         <li>
-            <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
-            <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
+                <em>{{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</em>
+            </a>
         </li>
     {% endfor %}
 </ul>
-
