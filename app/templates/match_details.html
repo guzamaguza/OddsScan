@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .container {
             max-width: 800px;
@@ -12,7 +13,7 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .odds-section, .score-section {
+        .odds-section, .score-section, .chart-section {
             margin-bottom: 30px;
             padding: 20px;
             border: 1px solid #ddd;
@@ -35,6 +36,11 @@
         }
         .back-link:hover {
             background-color: #0056b3;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
         }
     </style>
 </head>
@@ -59,9 +65,16 @@
         </div>
         {% endif %}
 
+        <div class="chart-section">
+            <h2>Odds History</h2>
+            <div class="chart-container">
+                <canvas id="oddsChart"></canvas>
+            </div>
+        </div>
+
         {% if event.bookmakers %}
         <div class="odds-section">
-            <h2>Odds</h2>
+            <h2>Current Odds</h2>
             {% for bookmaker in event.bookmakers %}
                 <div class="bookmaker">
                     <h3>{{ bookmaker.title }}</h3>
@@ -79,5 +92,59 @@
 
         <a href="{{ url_for('main.home') }}" class="back-link">Back to Matches</a>
     </div>
+
+    <script>
+        // Fetch odds history data
+        fetch('/match/{{ event.uuid }}/odds-history')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('oddsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: '{{ event.home_team }}',
+                                data: data.home_odds,
+                                borderColor: 'rgb(75, 192, 192)',
+                                tension: 0.1
+                            },
+                            {
+                                label: '{{ event.away_team }}',
+                                data: data.away_odds,
+                                borderColor: 'rgb(255, 99, 132)',
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Draw',
+                                data: data.draw_odds,
+                                borderColor: 'rgb(54, 162, 235)',
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Odds'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
 </body>
 </html>
