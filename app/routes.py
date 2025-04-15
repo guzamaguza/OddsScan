@@ -41,6 +41,12 @@ def home():
     ongoing_events = remove_duplicates(ongoing_events)
     upcoming_events = remove_duplicates(upcoming_events)
     
+    # Debug logging
+    print(f"Current time (UTC): {now}")
+    print(f"Past events count: {len(past_events)}")
+    print(f"Ongoing events count: {len(ongoing_events)}")
+    print(f"Upcoming events count: {len(upcoming_events)}")
+    
     return render_template('home.html', 
                          past_events=past_events,
                          ongoing_events=ongoing_events,
@@ -108,3 +114,26 @@ def events():
     # Return a list of all events' ids as JSON
     from app.models import OddsEvent
     return {"events": [e.id for e in OddsEvent.query.all()]}
+
+@main.route("/debug/events")
+def debug_events():
+    events = OddsEvent.query.order_by(OddsEvent.commence_time.asc()).all()
+    now = datetime.now(timezone.utc)
+    
+    event_data = []
+    for event in events:
+        event_data.append({
+            'id': event.id,
+            'home_team': event.home_team,
+            'away_team': event.away_team,
+            'commence_time': event.commence_time.strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'created_at': event.created_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'is_past': event.commence_time < (now - timedelta(hours=2)),
+            'is_ongoing': (event.commence_time <= now and event.commence_time > (now - timedelta(hours=2))),
+            'is_upcoming': event.commence_time > now
+        })
+    
+    return jsonify({
+        'current_time': now.strftime('%Y-%m-%d %H:%M:%S UTC'),
+        'events': event_data
+    })
