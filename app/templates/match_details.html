@@ -168,8 +168,8 @@
                                 annotations: {
                                     line1: {
                                         type: 'line',
-                                        xMin: '{{ event.commence_time.strftime("%Y-%m-%d %H:%M:%S") }}',
-                                        xMax: '{{ event.commence_time.strftime("%Y-%m-%d %H:%M:%S") }}',
+                                        xMin: data.commence_time,
+                                        xMax: data.commence_time,
                                         borderColor: 'rgb(255, 0, 0)',
                                         borderWidth: 2,
                                         label: {
