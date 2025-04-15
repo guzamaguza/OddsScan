@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.models import OddsEvent, Score
 from sqlalchemy import func
 from app import db
@@ -8,30 +8,26 @@ main = Blueprint("main", __name__)
 
 @main.route('/')
 def home():
-    # Get current time
-    now = datetime.utcnow()
+    # Get current time in UTC
+    now = datetime.now(timezone.utc)
     
-    # Define a time window for ongoing events (e.g., events that started in the last 3 hours)
-    ongoing_window = timedelta(hours=3)
-    ongoing_start = now - ongoing_window
-
-    # Get past events (events that ended before the ongoing window)
+    # Get past events (completed more than 2 hours ago)
     past_events = OddsEvent.query.filter(
-        OddsEvent.commence_time < ongoing_start
+        OddsEvent.commence_time < (now - timedelta(hours=2))
     ).order_by(OddsEvent.commence_time.desc()).all()
-
-    # Get ongoing events (events that started within the ongoing window)
+    
+    # Get ongoing events (started but not completed)
     ongoing_events = OddsEvent.query.filter(
-        OddsEvent.commence_time >= ongoing_start,
-        OddsEvent.commence_time <= now
+        OddsEvent.commence_time <= now,
+        OddsEvent.commence_time > (now - timedelta(hours=2))
     ).order_by(OddsEvent.commence_time.asc()).all()
-
-    # Get future events
-    future_events = OddsEvent.query.filter(
+    
+    # Get upcoming events (not started yet)
+    upcoming_events = OddsEvent.query.filter(
         OddsEvent.commence_time > now
     ).order_by(OddsEvent.commence_time.asc()).all()
-
-    # Remove duplicates based on id, keeping the most recent version
+    
+    # Remove duplicates based on event ID
     def remove_duplicates(events):
         seen = set()
         unique_events = []
@@ -40,15 +36,15 @@ def home():
                 seen.add(event.id)
                 unique_events.append(event)
         return unique_events
-
+    
     past_events = remove_duplicates(past_events)
     ongoing_events = remove_duplicates(ongoing_events)
-    future_events = remove_duplicates(future_events)
-
+    upcoming_events = remove_duplicates(upcoming_events)
+    
     return render_template('home.html', 
-                         past_events=past_events, 
-                         ongoing_events=ongoing_events, 
-                         future_events=future_events)
+                         past_events=past_events,
+                         ongoing_events=ongoing_events,
+                         upcoming_events=upcoming_events)
 
 @main.route("/match/<uuid>")
 def match_details(uuid):
@@ -77,7 +73,7 @@ def odds_history(uuid):
     
     for event in historical_events:
         # Convert created_at to UTC for consistent comparison
-        created_at_utc = event.created_at.astimezone(datetime.timezone.utc)
+        created_at_utc = event.created_at.replace(tzinfo=timezone.utc)
         chart_data['labels'].append(created_at_utc.strftime('%Y-%m-%d %H:%M:%S'))
         
         # Get the best odds for each outcome
