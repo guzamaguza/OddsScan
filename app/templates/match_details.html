@@ -110,9 +110,10 @@
                 console.log('Raw data received:', data);
                 
                 // Check if we have valid data
-                if (!data.labels || !data.home_odds || !data.away_odds || !data.draw_odds) {
+                if (!data.labels || !data.bookmakers || !data.home_odds || !data.away_odds || !data.draw_odds) {
                     console.error('Missing required data fields:', {
                         labels: !!data.labels,
+                        bookmakers: !!data.bookmakers,
                         home_odds: !!data.home_odds,
                         away_odds: !!data.away_odds,
                         draw_odds: !!data.draw_odds
@@ -120,87 +121,83 @@
                     return;
                 }
 
-                // Log the first few data points
-                console.log('Sample data points:', {
-                    labels: data.labels.slice(0, 3),
-                    home_odds: data.home_odds.slice(0, 3),
-                    away_odds: data.away_odds.slice(0, 3),
-                    draw_odds: data.draw_odds.slice(0, 3)
-                });
-                
-                // Prepare the data points
-                const homeData = data.home_odds.map((value, index) => {
-                    const date = new Date(data.labels[index]);
-                    console.log(`Processing home data point ${index}:`, { date, value });
-                    return {
-                        x: date,
-                        y: value
-                    };
-                }).filter(point => point.y !== null);
-                
-                const awayData = data.away_odds.map((value, index) => {
-                    const date = new Date(data.labels[index]);
-                    console.log(`Processing away data point ${index}:`, { date, value });
-                    return {
-                        x: date,
-                        y: value
-                    };
-                }).filter(point => point.y !== null);
-                
-                const drawData = data.draw_odds.map((value, index) => {
-                    const date = new Date(data.labels[index]);
-                    console.log(`Processing draw data point ${index}:`, { date, value });
-                    return {
-                        x: date,
-                        y: value
-                    };
-                }).filter(point => point.y !== null);
-                
-                console.log('Final processed data:', {
-                    home: homeData,
-                    away: awayData,
-                    draw: drawData
-                });
-
                 const ctx = document.getElementById('oddsChart').getContext('2d');
+                
+                // Generate colors for each bookmaker
+                const colors = [
+                    'rgb(255, 99, 132)',    // Red
+                    'rgb(54, 162, 235)',    // Blue
+                    'rgb(255, 206, 86)',    // Yellow
+                    'rgb(75, 192, 192)',    // Teal
+                    'rgb(153, 102, 255)',   // Purple
+                    'rgb(255, 159, 64)',    // Orange
+                    'rgb(199, 199, 199)',   // Gray
+                    'rgb(83, 102, 255)',    // Indigo
+                    'rgb(40, 167, 69)',      // Green
+                    'rgb(220, 53, 69)'      // Dark Red
+                ];
+                
+                // Prepare datasets for each bookmaker
+                const datasets = [];
+                data.bookmakers.forEach((bookmaker, index) => {
+                    const color = colors[index % colors.length];
+                    const opacity = 0.2;
+                    
+                    // Home team odds
+                    datasets.push({
+                        label: `${bookmaker} - {{ event.home_team }}`,
+                        data: data.home_odds[bookmaker].map((value, i) => ({
+                            x: new Date(data.labels[i]),
+                            y: value
+                        })).filter(point => point.y !== null),
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
+                        tension: 0.1,
+                        pointStyle: 'circle',
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        showLine: true
+                    });
+                    
+                    // Away team odds
+                    datasets.push({
+                        label: `${bookmaker} - {{ event.away_team }}`,
+                        data: data.away_odds[bookmaker].map((value, i) => ({
+                            x: new Date(data.labels[i]),
+                            y: value
+                        })).filter(point => point.y !== null),
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
+                        tension: 0.1,
+                        pointStyle: 'triangle',
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        showLine: true,
+                        borderDash: [5, 5]
+                    });
+                    
+                    // Draw odds
+                    datasets.push({
+                        label: `${bookmaker} - Draw`,
+                        data: data.draw_odds[bookmaker].map((value, i) => ({
+                            x: new Date(data.labels[i]),
+                            y: value
+                        })).filter(point => point.y !== null),
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
+                        tension: 0.1,
+                        pointStyle: 'rect',
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        showLine: true,
+                        borderDash: [2, 2]
+                    });
+                });
+                
                 const chart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        datasets: [
-                            {
-                                label: '{{ event.home_team }}',
-                                data: homeData,
-                                borderColor: 'rgb(75, 192, 192)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                                tension: 0.1,
-                                pointStyle: 'circle',
-                                pointRadius: 5,
-                                pointHoverRadius: 8,
-                                showLine: true
-                            },
-                            {
-                                label: '{{ event.away_team }}',
-                                data: awayData,
-                                borderColor: 'rgb(255, 99, 132)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                                tension: 0.1,
-                                pointStyle: 'circle',
-                                pointRadius: 5,
-                                pointHoverRadius: 8,
-                                showLine: true
-                            },
-                            {
-                                label: 'Draw',
-                                data: drawData,
-                                borderColor: 'rgb(54, 162, 235)',
-                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                                tension: 0.1,
-                                pointStyle: 'circle',
-                                pointRadius: 5,
-                                pointHoverRadius: 8,
-                                showLine: true
-                            }
-                        ]
+                        datasets: datasets
                     },
                     options: {
                         responsive: true,
@@ -276,9 +273,6 @@
                         }
                     }
                 });
-
-                // Log chart instance for debugging
-                console.log('Chart instance:', chart);
             })
             .catch(error => {
                 console.error('Error fetching or processing data:', error);
