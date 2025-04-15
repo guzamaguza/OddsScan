@@ -4,6 +4,7 @@
     <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
         .container {
             max-width: 800px;
@@ -99,41 +100,69 @@
         fetch('/match/{{ event.uuid }}/odds-history')
             .then(response => {
                 console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 return response.json();
             })
             .then(data => {
-                console.log('Received data:', data);
+                console.log('Raw data received:', data);
                 
                 // Check if we have valid data
                 if (!data.labels || !data.home_odds || !data.away_odds || !data.draw_odds) {
-                    console.error('Missing required data fields');
+                    console.error('Missing required data fields:', {
+                        labels: !!data.labels,
+                        home_odds: !!data.home_odds,
+                        away_odds: !!data.away_odds,
+                        draw_odds: !!data.draw_odds
+                    });
                     return;
                 }
+
+                // Log the first few data points
+                console.log('Sample data points:', {
+                    labels: data.labels.slice(0, 3),
+                    home_odds: data.home_odds.slice(0, 3),
+                    away_odds: data.away_odds.slice(0, 3),
+                    draw_odds: data.draw_odds.slice(0, 3)
+                });
                 
                 // Prepare the data points
-                const homeData = data.home_odds.map((value, index) => ({
-                    x: new Date(data.labels[index]),
-                    y: value
-                })).filter(point => point.y !== null);
+                const homeData = data.home_odds.map((value, index) => {
+                    const date = new Date(data.labels[index]);
+                    console.log(`Processing home data point ${index}:`, { date, value });
+                    return {
+                        x: date,
+                        y: value
+                    };
+                }).filter(point => point.y !== null);
                 
-                const awayData = data.away_odds.map((value, index) => ({
-                    x: new Date(data.labels[index]),
-                    y: value
-                })).filter(point => point.y !== null);
+                const awayData = data.away_odds.map((value, index) => {
+                    const date = new Date(data.labels[index]);
+                    console.log(`Processing away data point ${index}:`, { date, value });
+                    return {
+                        x: date,
+                        y: value
+                    };
+                }).filter(point => point.y !== null);
                 
-                const drawData = data.draw_odds.map((value, index) => ({
-                    x: new Date(data.labels[index]),
-                    y: value
-                })).filter(point => point.y !== null);
+                const drawData = data.draw_odds.map((value, index) => {
+                    const date = new Date(data.labels[index]);
+                    console.log(`Processing draw data point ${index}:`, { date, value });
+                    return {
+                        x: date,
+                        y: value
+                    };
+                }).filter(point => point.y !== null);
                 
-                console.log('Processed data points:', {
+                console.log('Final processed data:', {
                     home: homeData,
                     away: awayData,
                     draw: drawData
                 });
-                
+
                 const ctx = document.getElementById('oddsChart').getContext('2d');
-                new Chart(ctx, {
+                const chart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         datasets: [
@@ -231,7 +260,8 @@
                                     unit: 'minute',
                                     displayFormats: {
                                         minute: 'HH:mm'
-                                    }
+                                    },
+                                    parser: 'yyyy-MM-dd HH:mm:ss'
                                 },
                                 title: {
                                     display: true,
@@ -245,9 +275,12 @@
                         }
                     }
                 });
+
+                // Log chart instance for debugging
+                console.log('Chart instance:', chart);
             })
             .catch(error => {
-                console.error('Error fetching data:', error);
+                console.error('Error fetching or processing data:', error);
             });
     </script>
 </body>
