@@ -3,6 +3,7 @@
 <head>
     <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <style>
         .container {
             max-width: 800px;
@@ -108,37 +109,98 @@
                                 label: '{{ event.home_team }}',
                                 data: data.home_odds,
                                 borderColor: 'rgb(75, 192, 192)',
-                                tension: 0.1
+                                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                tension: 0.1,
+                                pointStyle: 'circle',
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                showLine: true
                             },
                             {
                                 label: '{{ event.away_team }}',
                                 data: data.away_odds,
                                 borderColor: 'rgb(255, 99, 132)',
-                                tension: 0.1
+                                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                                tension: 0.1,
+                                pointStyle: 'circle',
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                showLine: true
                             },
                             {
                                 label: 'Draw',
                                 data: data.draw_odds,
                                 borderColor: 'rgb(54, 162, 235)',
-                                tension: 0.1
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                tension: 0.1,
+                                pointStyle: 'circle',
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                showLine: true
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toFixed(2);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line',
+                                        xMin: '{{ event.commence_time.strftime("%Y-%m-%d %H:%M:%S") }}',
+                                        xMax: '{{ event.commence_time.strftime("%Y-%m-%d %H:%M:%S") }}',
+                                        borderColor: 'rgb(255, 0, 0)',
+                                        borderWidth: 2,
+                                        label: {
+                                            content: 'Game Start',
+                                            enabled: true,
+                                            position: 'top'
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         scales: {
                             y: {
                                 beginAtZero: true,
                                 title: {
                                     display: true,
                                     text: 'Odds'
+                                },
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
                                 }
                             },
                             x: {
                                 title: {
                                     display: true,
                                     text: 'Time'
+                                },
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(0, 0, 0, 0.1)'
                                 }
                             }
                         }
