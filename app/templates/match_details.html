@@ -1,118 +1,49 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
-    <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .match-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .odds-section, .score-section, .chart-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .bookmaker {
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 3px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .back-link:hover {
-            background-color: #0056b3;
-        }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="match-header">
-            <h1>{{ event.home_team }} vs {{ event.away_team }}</h1>
-            <p>Time: {{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            <p>Sport: {{ event.sport_title }}</p>
-        </div>
-
-        {% if score %}
-        <div class="score-section">
-            <h2>Score</h2>
-            <p>Status: {{ 'Completed' if score.completed else 'In Progress' }}</p>
-            {% if score.scores %}
-                <p>{{ event.home_team }}: {{ score.scores.get(event.home_team, 'N/A') }}</p>
-                <p>{{ event.away_team }}: {{ score.scores.get(event.away_team, 'N/A') }}</p>
-            {% else %}
-                <p>No score available yet</p>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="chart-section">
-            <h2>Odds History</h2>
-            <div class="chart-container">
-                <canvas id="oddsChart"></canvas>
-            </div>
-        </div>
-
-        {% if event.bookmakers %}
-        <div class="odds-section">
-            <h2>Current Odds</h2>
-            {% for bookmaker in event.bookmakers %}
-                <div class="bookmaker">
-                    <h3>{{ bookmaker.title }}</h3>
-                    {% for market in bookmaker.markets %}
-                        {% if market.key == 'h2h' %}
-                            {% for outcome in market.outcomes %}
-                                <p>{{ outcome.name }}: {{ outcome.price }}</p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <a href="{{ url_for('main.home') }}" class="back-link">Back to Matches</a>
-    </div>
-
     <script>
         // Fetch odds history data
         fetch('/match/{{ event.uuid }}/odds-history')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                console.log('Received data:', data); // Debug log
+                console.log('Received data:', data);
+                
+                // Check if we have valid data
+                if (!data.labels || !data.home_odds || !data.away_odds || !data.draw_odds) {
+                    console.error('Missing required data fields');
+                    return;
+                }
+                
+                // Prepare the data points
+                const homeData = data.home_odds.map((value, index) => ({
+                    x: new Date(data.labels[index]),
+                    y: value
+                })).filter(point => point.y !== null);
+                
+                const awayData = data.away_odds.map((value, index) => ({
+                    x: new Date(data.labels[index]),
+                    y: value
+                })).filter(point => point.y !== null);
+                
+                const drawData = data.draw_odds.map((value, index) => ({
+                    x: new Date(data.labels[index]),
+                    y: value
+                })).filter(point => point.y !== null);
+                
+                console.log('Processed data points:', {
+                    home: homeData,
+                    away: awayData,
+                    draw: drawData
+                });
                 
                 const ctx = document.getElementById('oddsChart').getContext('2d');
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.labels,
                         datasets: [
                             {
                                 label: '{{ event.home_team }}',
-                                data: data.home_odds.map((value, index) => ({
-                                    x: data.labels[index],
-                                    y: value
-                                })),
+                                data: homeData,
                                 borderColor: 'rgb(75, 192, 192)',
                                 backgroundColor: 'rgba(75, 192, 192, 0.1)',
                                 tension: 0.1,
@@ -123,10 +54,7 @@
                             },
                             {
                                 label: '{{ event.away_team }}',
-                                data: data.away_odds.map((value, index) => ({
-                                    x: data.labels[index],
-                                    y: value
-                                })),
+                                data: awayData,
                                 borderColor: 'rgb(255, 99, 132)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.1)',
                                 tension: 0.1,
@@ -137,10 +65,7 @@
                             },
                             {
                                 label: 'Draw',
-                                data: data.draw_odds.map((value, index) => ({
-                                    x: data.labels[index],
-                                    y: value
-                                })),
+                                data: drawData,
                                 borderColor: 'rgb(54, 162, 235)',
                                 backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                 tension: 0.1,
@@ -179,8 +104,8 @@
                                 annotations: {
                                     line1: {
                                         type: 'line',
-                                        xMin: data.commence_time,
-                                        xMax: data.commence_time,
+                                        xMin: new Date(data.commence_time),
+                                        xMax: new Date(data.commence_time),
                                         borderColor: 'rgb(255, 0, 0)',
                                         borderWidth: 2,
                                         label: {
@@ -229,5 +154,3 @@
                 console.error('Error fetching data:', error);
             });
     </script>
-</body>
-</html>
