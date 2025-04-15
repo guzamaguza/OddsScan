@@ -24,7 +24,7 @@
 
 <h1>Upcoming Events</h1>
 <ul>
-    {% for event in future_events %}
+    {% for event in upcoming_events %}
         <li>
             <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
                 <strong>{{ event.home_team }} vs {{ event.away_team }}</strong> - 
@@ -33,3 +33,4 @@
         </li>
     {% endfor %}
 </ul>
+
