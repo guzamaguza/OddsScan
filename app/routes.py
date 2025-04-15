@@ -2,10 +2,9 @@ from flask import Blueprint, render_template
 from datetime import datetime, timedelta
 from app.models import OddsEvent
 from sqlalchemy import func
-from flask_sqlalchemy import SQLAlchemy
+from app import db
 
 main = Blueprint("main", __name__)
-db = SQLAlchemy()
 
 @main.route('/')
 def home():
