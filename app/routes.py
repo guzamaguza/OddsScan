@@ -2,8 +2,10 @@ from flask import Blueprint, render_template
 from datetime import datetime, timedelta
 from app.models import OddsEvent
 from sqlalchemy import func
+from flask_sqlalchemy import SQLAlchemy
 
 main = Blueprint("main", __name__)
+db = SQLAlchemy()
 
 @main.route('/')
 def home():
@@ -15,20 +17,26 @@ def home():
     ongoing_start = now - ongoing_window
 
     # Get past events (events that ended before the ongoing window)
-    past_events = OddsEvent.query.filter(
+    past_events = db.session.query(OddsEvent).filter(
         OddsEvent.commence_time < ongoing_start
-    ).order_by(OddsEvent.commence_time.desc()).all()
+    ).group_by(OddsEvent.id).order_by(
+        OddsEvent.commence_time.desc()
+    ).all()
 
     # Get ongoing events (events that started within the ongoing window)
-    ongoing_events = OddsEvent.query.filter(
+    ongoing_events = db.session.query(OddsEvent).filter(
         OddsEvent.commence_time >= ongoing_start,
         OddsEvent.commence_time <= now
-    ).order_by(OddsEvent.commence_time.asc()).all()
+    ).group_by(OddsEvent.id).order_by(
+        OddsEvent.commence_time.asc()
+    ).all()
 
     # Get future events
-    future_events = OddsEvent.query.filter(
+    future_events = db.session.query(OddsEvent).filter(
         OddsEvent.commence_time > now
-    ).order_by(OddsEvent.commence_time.asc()).all()
+    ).group_by(OddsEvent.id).order_by(
+        OddsEvent.commence_time.asc()
+    ).all()
 
     return render_template('home.html', 
                          past_events=past_events, 
