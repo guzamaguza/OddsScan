@@ -100,9 +100,10 @@ def odds_history(uuid):
                                 if draw_odds is None or outcome.get('price', 0) > draw_odds:
                                     draw_odds = outcome.get('price')
         
-        chart_data['home_odds'].append(home_odds)
-        chart_data['away_odds'].append(away_odds)
-        chart_data['draw_odds'].append(draw_odds)
+        # Ensure we have valid numbers for the chart
+        chart_data['home_odds'].append(float(home_odds) if home_odds is not None else None)
+        chart_data['away_odds'].append(float(away_odds) if away_odds is not None else None)
+        chart_data['draw_odds'].append(float(draw_odds) if draw_odds is not None else None)
     
     return jsonify(chart_data)
 
