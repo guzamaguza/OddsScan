@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from datetime import datetime, timedelta
-from app.models import OddsEvent
+from app.models import OddsEvent, Score
 from sqlalchemy import func
 from app import db
 
@@ -49,6 +49,16 @@ def home():
                          past_events=past_events, 
                          ongoing_events=ongoing_events, 
                          future_events=future_events)
+
+@main.route("/match/<uuid>")
+def match_details(uuid):
+    # Get the event and its associated score
+    event = OddsEvent.query.get_or_404(uuid)
+    score = Score.query.filter_by(event_id=uuid).first()
+    
+    return render_template('match_details.html', 
+                         event=event,
+                         score=score)
 
 @main.route("/events")
 def events():
