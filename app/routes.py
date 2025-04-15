@@ -71,7 +71,23 @@ def odds_history(uuid):
         'labels': [],
         'home_odds': [],
         'away_odds': [],
-        'draw_odds': []
+        'draw_odds': [],
+        'annotation': {
+            'annotations': {
+                'line1': {
+                    'type': 'line',
+                    'xMin': f'{event.commence_time.strftime("%Y-%m-%d %H:%M:%S")}',
+                    'xMax': f'{event.commence_time.strftime("%Y-%m-%d %H:%M:%S")}',
+                    'borderColor': 'rgb(255, 0, 0)',
+                    'borderWidth': 2,
+                    'label': {
+                        'content': 'Game Start',
+                        'enabled': True,
+                        'position': 'top'
+                    }
+                }
+            }
+        }
     }
     
     for event in historical_events:
