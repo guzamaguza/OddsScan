@@ -69,13 +69,22 @@ def odds_history(uuid):
     event = OddsEvent.query.get_or_404(uuid)
     historical_events = OddsEvent.query.filter_by(id=event.id).order_by(OddsEvent.created_at.asc()).all()
     
+    # Get unique bookmaker names
+    bookmaker_names = set()
+    for event in historical_events:
+        if event.bookmakers:
+            for bookmaker in event.bookmakers:
+                bookmaker_names.add(bookmaker.get('title'))
+    bookmaker_names = sorted(list(bookmaker_names))
+    
     # Prepare data for the chart
     chart_data = {
         'labels': [],
-        'home_odds': [],
-        'away_odds': [],
-        'draw_odds': [],
-        'commence_time': event.commence_time.strftime('%Y-%m-%d %H:%M:%S')
+        'commence_time': event.commence_time.strftime('%Y-%m-%d %H:%M:%S'),
+        'bookmakers': bookmaker_names,
+        'home_odds': {name: [] for name in bookmaker_names},
+        'away_odds': {name: [] for name in bookmaker_names},
+        'draw_odds': {name: [] for name in bookmaker_names}
     }
     
     for event in historical_events:
@@ -83,30 +92,26 @@ def odds_history(uuid):
         created_at_utc = event.created_at.replace(tzinfo=timezone.utc)
         chart_data['labels'].append(created_at_utc.strftime('%Y-%m-%d %H:%M:%S'))
         
-        # Get the best odds for each outcome
-        home_odds = None
-        away_odds = None
-        draw_odds = None
+        # Initialize odds for this timestamp
+        for bookmaker in bookmaker_names:
+            chart_data['home_odds'][bookmaker].append(None)
+            chart_data['away_odds'][bookmaker].append(None)
+            chart_data['draw_odds'][bookmaker].append(None)
         
+        # Get odds for each bookmaker
         if event.bookmakers:
             for bookmaker in event.bookmakers:
-                for market in bookmaker.get('markets', []):
-                    if market.get('key') == 'h2h':
-                        for outcome in market.get('outcomes', []):
-                            if outcome.get('name') == event.home_team:
-                                if home_odds is None or outcome.get('price', 0) > home_odds:
-                                    home_odds = outcome.get('price')
-                            elif outcome.get('name') == event.away_team:
-                                if away_odds is None or outcome.get('price', 0) > away_odds:
-                                    away_odds = outcome.get('price')
-                            elif outcome.get('name') == 'Draw':
-                                if draw_odds is None or outcome.get('price', 0) > draw_odds:
-                                    draw_odds = outcome.get('price')
-        
-        # Ensure we have valid numbers for the chart
-        chart_data['home_odds'].append(float(home_odds) if home_odds is not None else None)
-        chart_data['away_odds'].append(float(away_odds) if away_odds is not None else None)
-        chart_data['draw_odds'].append(float(draw_odds) if draw_odds is not None else None)
+                bookmaker_name = bookmaker.get('title')
+                if bookmaker_name in bookmaker_names:
+                    for market in bookmaker.get('markets', []):
+                        if market.get('key') == 'h2h':
+                            for outcome in market.get('outcomes', []):
+                                if outcome.get('name') == event.home_team:
+                                    chart_data['home_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                                elif outcome.get('name') == event.away_team:
+                                    chart_data['away_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                                elif outcome.get('name') == 'Draw':
+                                    chart_data['draw_odds'][bookmaker_name][-1] = float(outcome.get('price'))
     
     return jsonify(chart_data)
 
