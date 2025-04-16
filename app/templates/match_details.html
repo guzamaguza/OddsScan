@@ -181,14 +181,16 @@
                                     borderColor: 'rgb(255, 0, 0)',
                                     borderWidth: 2,
                                     label: {
-                                        content: 'Game Start',
+                                        content: 'Start Time',
                                         enabled: true,
-                                        position: 'top',
+                                        position: 'center',
                                         backgroundColor: 'rgb(255, 0, 0)',
                                         color: 'white',
                                         font: {
                                             size: 12
-                                        }
+                                        },
+                                        rotation: 90,
+                                        yAdjust: -30
                                     }
                                 },
                                 currentTime: {
@@ -200,12 +202,14 @@
                                     label: {
                                         content: 'Current Time',
                                         enabled: true,
-                                        position: 'top',
+                                        position: 'center',
                                         backgroundColor: 'rgb(0, 128, 0)',
                                         color: 'white',
                                         font: {
                                             size: 12
-                                        }
+                                        },
+                                        rotation: 90,
+                                        yAdjust: -30
                                     }
                                 }
                             }
@@ -247,34 +251,6 @@
                         }
                     }
                 };
-
-                // Add legend items for the vertical lines
-                const verticalLineLegend = {
-                    id: 'verticalLines',
-                    beforeDraw(chart) {
-                        const {ctx, chartArea: {top, right}} = chart;
-                        ctx.save();
-                        
-                        // Game Start line legend
-                        ctx.fillStyle = 'rgb(255, 0, 0)';
-                        ctx.fillRect(right - 200, top - 20, 15, 2);
-                        ctx.fillStyle = 'black';
-                        ctx.font = '12px Arial';
-                        ctx.fillText('Game Start', right - 180, top - 15);
-                        
-                        // Current Time line legend
-                        ctx.fillStyle = 'rgb(0, 128, 0)';
-                        ctx.fillRect(right - 200, top - 5, 15, 2);
-                        ctx.fillStyle = 'black';
-                        ctx.font = '12px Arial';
-                        ctx.fillText('Current Time', right - 180, top);
-                        
-                        ctx.restore();
-                    }
-                };
-
-                // Add the custom legend plugin to the options
-                commonOptions.plugins.verticalLineLegend = verticalLineLegend;
 
                 // Create home team odds chart
                 const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
@@ -342,3 +318,4 @@
     </script>
 </body>
 </html>
+
