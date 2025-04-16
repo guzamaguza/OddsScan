@@ -19,6 +19,19 @@ class OddsEvent(db.Model):
     def __repr__(self):
         return f"<OddsEvent(uuid={self.uuid}, home_team={self.home_team}, away_team={self.away_team})>"
 
+class HistoricalOdds(db.Model):
+    __tablename__ = 'historical_odds'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.String, db.ForeignKey('odds_events.uuid'), nullable=False)
+    bookmakers = db.Column(JSON, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    event = db.relationship('OddsEvent', backref=db.backref('historical_odds', lazy=True))
+
+    def __repr__(self):
+        return f"<HistoricalOdds(event_id={self.event_id}, created_at={self.created_at})>"
+
 class Score(db.Model):
     __tablename__ = 'scores'
 
