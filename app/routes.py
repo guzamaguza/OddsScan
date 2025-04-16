@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify
 from datetime import datetime, timedelta, timezone
-from app.models import OddsEvent, Score
+from app.models import OddsEvent, Score, HistoricalOdds
 from sqlalchemy import func
 from app import db
 
@@ -65,16 +65,20 @@ def match_details(uuid):
 
 @main.route("/match/<uuid>/odds-history")
 def odds_history(uuid):
-    # Get all historical odds for this event (using the API event ID)
+    # Get the event and its historical odds
     event = OddsEvent.query.get_or_404(uuid)
-    historical_events = OddsEvent.query.filter_by(id=event.id).order_by(OddsEvent.created_at.asc()).all()
+    historical_odds = event.historical_odds.order_by(HistoricalOdds.created_at.asc()).all()
     
     # Get unique bookmaker names
     bookmaker_names = set()
-    for event in historical_events:
-        if event.bookmakers:
-            for bookmaker in event.bookmakers:
+    for odds in historical_odds:
+        if odds.bookmakers:
+            for bookmaker in odds.bookmakers:
                 bookmaker_names.add(bookmaker.get('title'))
+    # Also include current bookmakers
+    if event.bookmakers:
+        for bookmaker in event.bookmakers:
+            bookmaker_names.add(bookmaker.get('title'))
     bookmaker_names = sorted(list(bookmaker_names))
     
     # Prepare data for the chart
@@ -87,9 +91,9 @@ def odds_history(uuid):
         'draw_odds': {name: [] for name in bookmaker_names}
     }
     
-    for event in historical_events:
-        # Convert created_at to UTC for consistent comparison
-        created_at_utc = event.created_at.replace(tzinfo=timezone.utc)
+    # Add historical odds data
+    for odds in historical_odds:
+        created_at_utc = odds.created_at.replace(tzinfo=timezone.utc)
         chart_data['labels'].append(created_at_utc.strftime('%Y-%m-%d %H:%M:%S'))
         
         # Initialize odds for this timestamp
@@ -99,8 +103,8 @@ def odds_history(uuid):
             chart_data['draw_odds'][bookmaker].append(None)
         
         # Get odds for each bookmaker
-        if event.bookmakers:
-            for bookmaker in event.bookmakers:
+        if odds.bookmakers:
+            for bookmaker in odds.bookmakers:
                 bookmaker_name = bookmaker.get('title')
                 if bookmaker_name in bookmaker_names:
                     for market in bookmaker.get('markets', []):
@@ -112,6 +116,31 @@ def odds_history(uuid):
                                     chart_data['away_odds'][bookmaker_name][-1] = float(outcome.get('price'))
                                 elif outcome.get('name') == 'Draw':
                                     chart_data['draw_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+    
+    # Add current odds data
+    if event.bookmakers:
+        current_time = datetime.now(timezone.utc)
+        chart_data['labels'].append(current_time.strftime('%Y-%m-%d %H:%M:%S'))
+        
+        # Initialize odds for current timestamp
+        for bookmaker in bookmaker_names:
+            chart_data['home_odds'][bookmaker].append(None)
+            chart_data['away_odds'][bookmaker].append(None)
+            chart_data['draw_odds'][bookmaker].append(None)
+        
+        # Get current odds for each bookmaker
+        for bookmaker in event.bookmakers:
+            bookmaker_name = bookmaker.get('title')
+            if bookmaker_name in bookmaker_names:
+                for market in bookmaker.get('markets', []):
+                    if market.get('key') == 'h2h':
+                        for outcome in market.get('outcomes', []):
+                            if outcome.get('name') == event.home_team:
+                                chart_data['home_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                            elif outcome.get('name') == event.away_team:
+                                chart_data['away_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                            elif outcome.get('name') == 'Draw':
+                                chart_data['draw_odds'][bookmaker_name][-1] = float(outcome.get('price'))
     
     return jsonify(chart_data)
 
