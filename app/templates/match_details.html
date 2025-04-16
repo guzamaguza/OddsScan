@@ -250,6 +250,11 @@
                         return;
                     }
 
+                    if (data.labels.length === 0) {
+                        console.log('No data points available for charts');
+                        return;
+                    }
+
                     console.log('Data validation passed. Processing charts...');
                     console.log('Labels:', data.labels);
                     console.log('Bookmakers:', data.bookmakers);
