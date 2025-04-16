@@ -69,6 +69,8 @@ def odds_history(uuid):
     event = OddsEvent.query.get_or_404(uuid)
     historical_odds = event.historical_odds.order_by(HistoricalOdds.created_at.asc()).all()
     
+    print(f"Debug: Found {len(historical_odds)} historical odds records for event {uuid}")
+    
     # Get unique bookmaker names
     bookmaker_names = set()
     for odds in historical_odds:
@@ -80,6 +82,8 @@ def odds_history(uuid):
         for bookmaker in event.bookmakers:
             bookmaker_names.add(bookmaker.get('title'))
     bookmaker_names = sorted(list(bookmaker_names))
+    
+    print(f"Debug: Found {len(bookmaker_names)} unique bookmakers: {bookmaker_names}")
     
     # Prepare data for the chart
     chart_data = {
@@ -110,12 +114,16 @@ def odds_history(uuid):
                     for market in bookmaker.get('markets', []):
                         if market.get('key') == 'h2h':
                             for outcome in market.get('outcomes', []):
-                                if outcome.get('name') == event.home_team:
-                                    chart_data['home_odds'][bookmaker_name][-1] = float(outcome.get('price'))
-                                elif outcome.get('name') == event.away_team:
-                                    chart_data['away_odds'][bookmaker_name][-1] = float(outcome.get('price'))
-                                elif outcome.get('name') == 'Draw':
-                                    chart_data['draw_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                                try:
+                                    price = float(outcome.get('price'))
+                                    if outcome.get('name') == event.home_team:
+                                        chart_data['home_odds'][bookmaker_name][-1] = price
+                                    elif outcome.get('name') == event.away_team:
+                                        chart_data['away_odds'][bookmaker_name][-1] = price
+                                    elif outcome.get('name') == 'Draw':
+                                        chart_data['draw_odds'][bookmaker_name][-1] = price
+                                except (ValueError, TypeError):
+                                    print(f"Debug: Invalid price value for {bookmaker_name}: {outcome.get('price')}")
     
     # Add current odds data
     if event.bookmakers:
@@ -135,12 +143,20 @@ def odds_history(uuid):
                 for market in bookmaker.get('markets', []):
                     if market.get('key') == 'h2h':
                         for outcome in market.get('outcomes', []):
-                            if outcome.get('name') == event.home_team:
-                                chart_data['home_odds'][bookmaker_name][-1] = float(outcome.get('price'))
-                            elif outcome.get('name') == event.away_team:
-                                chart_data['away_odds'][bookmaker_name][-1] = float(outcome.get('price'))
-                            elif outcome.get('name') == 'Draw':
-                                chart_data['draw_odds'][bookmaker_name][-1] = float(outcome.get('price'))
+                            try:
+                                price = float(outcome.get('price'))
+                                if outcome.get('name') == event.home_team:
+                                    chart_data['home_odds'][bookmaker_name][-1] = price
+                                elif outcome.get('name') == event.away_team:
+                                    chart_data['away_odds'][bookmaker_name][-1] = price
+                                elif outcome.get('name') == 'Draw':
+                                    chart_data['draw_odds'][bookmaker_name][-1] = price
+                            except (ValueError, TypeError):
+                                print(f"Debug: Invalid price value for {bookmaker_name}: {outcome.get('price')}")
+    
+    print(f"Debug: Generated chart data with {len(chart_data['labels'])} timestamps")
+    print(f"Debug: Sample home odds: {chart_data['home_odds'][bookmaker_names[0] if bookmaker_names else '']}")
+    print(f"Debug: Sample away odds: {chart_data['away_odds'][bookmaker_names[0] if bookmaker_names else '']}")
     
     return jsonify(chart_data)
 
