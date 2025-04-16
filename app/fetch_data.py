@@ -40,20 +40,29 @@ def fetch_odds(db):
                 existing_event = OddsEvent.query.filter_by(id=event["id"]).first()
                 
                 if existing_event:
+                    print(f"[INFO] Processing existing event: {existing_event.uuid}")
+                    print(f"- Home Team: {existing_event.home_team}")
+                    print(f"- Away Team: {existing_event.away_team}")
+                    print(f"- Current Bookmakers: {len(existing_event.bookmakers) if existing_event.bookmakers else 0}")
+                    
                     # Store current odds as historical data before updating
                     if existing_event.bookmakers:
+                        print(f"[INFO] Storing historical odds for event {existing_event.uuid}")
                         historical_odds = HistoricalOdds(
                             event_id=existing_event.uuid,
                             bookmakers=existing_event.bookmakers,
                             created_at=datetime.now(timezone.utc)
                         )
                         db.session.add(historical_odds)
+                        print(f"[INFO] Added historical odds record")
                     
                     # Update existing event
                     existing_event.bookmakers = event["bookmakers"]
                     print(f"[INFO] Updated existing OddsEvent: {existing_event.uuid}")
+                    print(f"- New Bookmakers: {len(event['bookmakers'])}")
                 else:
                     # Create new event
+                    print(f"[INFO] Creating new event")
                     new_event = OddsEvent(
                         id=event["id"],
                         sport_key=event["sport_key"],
@@ -65,12 +74,16 @@ def fetch_odds(db):
                     )
                     db.session.add(new_event)
                     print(f"[INFO] Created new OddsEvent: {new_event.uuid}")
+                    print(f"- Home Team: {new_event.home_team}")
+                    print(f"- Away Team: {new_event.away_team}")
+                    print(f"- Bookmakers: {len(event['bookmakers'])}")
 
             except Exception as e:
                 print(f"[ERROR] Failed to process odds event {event.get('id', 'unknown')}: {e}")
                 db.session.rollback()
 
         db.session.commit()
+        print("[INFO] Database changes committed")
         
     except requests.exceptions.RequestException as e:
         print(f"[ERROR] Failed to fetch odds data: {e}")
