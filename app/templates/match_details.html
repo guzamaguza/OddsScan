@@ -167,7 +167,7 @@
                         },
                         annotation: {
                             annotations: {
-                                line1: {
+                                gameStart: {
                                     type: 'line',
                                     xMin: new Date(data.commence_time),
                                     xMax: new Date(data.commence_time),
@@ -176,7 +176,23 @@
                                     label: {
                                         content: 'Game Start',
                                         enabled: true,
-                                        position: 'top'
+                                        position: 'top',
+                                        backgroundColor: 'rgb(255, 0, 0)',
+                                        color: 'white'
+                                    }
+                                },
+                                currentTime: {
+                                    type: 'line',
+                                    xMin: new Date(),
+                                    xMax: new Date(),
+                                    borderColor: 'rgb(0, 128, 0)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'Current Time',
+                                        enabled: true,
+                                        position: 'top',
+                                        backgroundColor: 'rgb(0, 128, 0)',
+                                        color: 'white'
                                     }
                                 }
                             }
