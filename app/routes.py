@@ -199,3 +199,42 @@ def debug_events():
         'current_time': now.strftime('%Y-%m-%d %H:%M:%S UTC'),
         'events': event_data
     })
+
+@main.route("/debug/database")
+def debug_database():
+    """Debug route to check database contents"""
+    from app.models import OddsEvent, HistoricalOdds, Score
+    
+    # Get counts
+    odds_events = OddsEvent.query.count()
+    historical_odds = HistoricalOdds.query.count()
+    scores = Score.query.count()
+    
+    # Get sample data
+    sample_event = OddsEvent.query.first()
+    sample_history = HistoricalOdds.query.first()
+    sample_score = Score.query.first()
+    
+    return jsonify({
+        "counts": {
+            "odds_events": odds_events,
+            "historical_odds": historical_odds,
+            "scores": scores
+        },
+        "sample_event": {
+            "uuid": sample_event.uuid if sample_event else None,
+            "home_team": sample_event.home_team if sample_event else None,
+            "away_team": sample_event.away_team if sample_event else None,
+            "bookmakers_count": len(sample_event.bookmakers) if sample_event and sample_event.bookmakers else 0
+        },
+        "sample_history": {
+            "id": sample_history.id if sample_history else None,
+            "event_id": sample_history.event_id if sample_history else None,
+            "created_at": sample_history.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if sample_history else None
+        },
+        "sample_score": {
+            "id": sample_score.id if sample_score else None,
+            "event_id": sample_score.event_id if sample_score else None,
+            "completed": sample_score.completed if sample_score else None
+        }
+    })
