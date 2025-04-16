@@ -226,304 +226,148 @@
     <script>
         // Function to fetch and update chart data
         function updateCharts() {
-            console.log('Fetching data from:', '/match/{{ event.uuid }}/odds-history');
-            fetch('/match/{{ event.uuid }}/odds-history')
+            console.log(`[DEBUG] Fetching odds history for event: ${eventId}`);
+            
+            fetch(`/match/${eventId}/odds-history`)
                 .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    console.log(`[DEBUG] Response status: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Raw data received:', data);
+                    console.log(`[DEBUG] Received data:`, data);
                     
-                    // Check if we have valid data
-                    if (!data.labels || !data.bookmakers || !data.home_odds || !data.away_odds || !data.draw_odds) {
-                        console.error('Missing required data fields:', {
-                            labels: !!data.labels,
-                            bookmakers: !!data.bookmakers,
-                            home_odds: !!data.home_odds,
-                            away_odds: !!data.away_odds,
-                            draw_odds: !!data.draw_odds
-                        });
-                        showNoDataMessage();
+                    if (!data.labels || !data.datasets) {
+                        console.error('[ERROR] Invalid data structure received');
                         return;
                     }
 
-                    if (data.labels.length === 0) {
-                        console.log('No data points available for charts');
-                        showNoDataMessage();
-                        return;
+                    // Destroy existing charts if they exist
+                    if (homeChart) {
+                        homeChart.destroy();
+                    }
+                    if (awayChart) {
+                        awayChart.destroy();
                     }
 
-                    // Check if we have any valid data points
-                    const hasValidData = data.bookmakers.some(bookmaker => {
-                        const homeOdds = data.home_odds[bookmaker];
-                        const awayOdds = data.away_odds[bookmaker];
-                        return homeOdds.some(odds => odds !== null) || awayOdds.some(odds => odds !== null);
-                    });
+                    // Get unique bookmaker names
+                    const bookmakerNames = Object.keys(data.datasets.home);
+                    console.log(`[DEBUG] Found ${bookmakerNames.length} bookmakers:`, bookmakerNames);
 
-                    if (!hasValidData) {
-                        console.log('No valid odds data available');
-                        showNoDataMessage();
-                        return;
-                    }
+                    // Prepare datasets for home team
+                    const homeDatasets = bookmakerNames.map(name => ({
+                        label: name,
+                        data: data.datasets.home[name],
+                        borderColor: getRandomColor(),
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }));
 
-                    console.log('Data validation passed. Processing charts...');
-                    console.log('Labels:', data.labels);
-                    console.log('Bookmakers:', data.bookmakers);
-                    console.log('Sample home odds:', data.home_odds[data.bookmakers[0]]);
-                    console.log('Sample away odds:', data.away_odds[data.bookmakers[0]]);
+                    // Prepare datasets for away team
+                    const awayDatasets = bookmakerNames.map(name => ({
+                        label: name,
+                        data: data.datasets.away[name],
+                        borderColor: getRandomColor(),
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }));
 
-                    // Generate colors for each bookmaker
-                    const colors = [
-                        'rgb(255, 99, 132)',    // Red
-                        'rgb(54, 162, 235)',    // Blue
-                        'rgb(255, 206, 86)',    // Yellow
-                        'rgb(75, 192, 192)',    // Teal
-                        'rgb(153, 102, 255)',   // Purple
-                        'rgb(255, 159, 64)',    // Orange
-                        'rgb(199, 199, 199)',   // Gray
-                        'rgb(83, 102, 255)',    // Indigo
-                        'rgb(40, 167, 69)',     // Green
-                        'rgb(220, 53, 69)'      // Dark Red
-                    ];
-
-                    // Common chart options
-                    const commonOptions = {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
+                    // Create home team chart
+                    const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
+                    homeChart = new Chart(homeCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.labels,
+                            datasets: homeDatasets
                         },
-                        plugins: {
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += context.parsed.y.toFixed(2);
-                                        }
-                                        return label;
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Odds'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
                                     }
                                 }
                             },
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    usePointStyle: true,
-                                    pointStyle: 'line'
-                                }
-                            },
-                            annotation: {
-                                annotations: {
-                                    gameStart: {
-                                        type: 'line',
-                                        xMin: new Date(data.commence_time),
-                                        xMax: new Date(data.commence_time),
-                                        borderColor: 'rgb(255, 0, 0)',
-                                        borderWidth: 2,
-                                        label: {
-                                            content: 'START',
-                                            enabled: true,
-                                            position: 'top',
-                                            backgroundColor: 'rgb(255, 0, 0)',
-                                            color: 'white',
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold'
-                                            },
-                                            padding: 6
-                                        }
-                                    },
-                                    currentTime: {
-                                        type: 'line',
-                                        xMin: new Date(),
-                                        xMax: new Date(),
-                                        borderColor: 'rgb(0, 128, 0)',
-                                        borderWidth: 2,
-                                        label: {
-                                            content: 'NOW',
-                                            enabled: true,
-                                            position: 'top',
-                                            backgroundColor: 'rgb(0, 128, 0)',
-                                            color: 'white',
-                                            font: {
-                                                size: 14,
-                                                weight: 'bold'
-                                            },
-                                            padding: 6
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
+                            plugins: {
                                 title: {
                                     display: true,
-                                    text: 'Odds'
+                                    text: 'Home Team Odds History'
                                 },
-                                grid: {
-                                    display: true,
-                                    color: 'rgba(0, 0, 0, 0.1)'
-                                }
-                            },
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: 'minute',
-                                    displayFormats: {
-                                        minute: 'MMM d, HH:mm'
-                                    },
-                                    parser: 'yyyy-MM-dd HH:mm:ss'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Time'
-                                },
-                                grid: {
-                                    display: true,
-                                    color: 'rgba(0, 0, 0, 0.1)'
-                                },
-                                ticks: {
-                                    maxRotation: 45,
-                                    minRotation: 45
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
                                 }
                             }
                         }
-                    };
-
-                    // Create or update home team odds chart
-                    const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
-                    const homeDatasets = data.bookmakers.map((bookmaker, index) => {
-                        const color = colors[index % colors.length];
-                        const opacity = 0.2;
-                        
-                        const points = data.home_odds[bookmaker].map((value, i) => ({
-                            x: new Date(data.labels[i]),
-                            y: value
-                        })).filter(point => point.y !== null);
-
-                        console.log(`Home odds for ${bookmaker}:`, points);
-                        
-                        return {
-                            label: bookmaker,
-                            data: points,
-                            borderColor: color,
-                            backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
-                            tension: 0.1,
-                            pointStyle: 'circle',
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            showLine: true
-                        };
                     });
 
-                    console.log('Creating home chart with datasets:', homeDatasets);
-
-                    if (window.homeChart) {
-                        window.homeChart.destroy();
-                    }
-                    window.homeChart = new Chart(homeCtx, {
-                        type: 'line',
-                        data: {
-                            datasets: homeDatasets
-                        },
-                        options: commonOptions
-                    });
-
-                    // Create or update away team odds chart
+                    // Create away team chart
                     const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
-                    const awayDatasets = data.bookmakers.map((bookmaker, index) => {
-                        const color = colors[index % colors.length];
-                        const opacity = 0.2;
-                        
-                        const points = data.away_odds[bookmaker].map((value, i) => ({
-                            x: new Date(data.labels[i]),
-                            y: value
-                        })).filter(point => point.y !== null);
-
-                        console.log(`Away odds for ${bookmaker}:`, points);
-                        
-                        return {
-                            label: bookmaker,
-                            data: points,
-                            borderColor: color,
-                            backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
-                            tension: 0.1,
-                            pointStyle: 'circle',
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            showLine: true
-                        };
-                    });
-
-                    console.log('Creating away chart with datasets:', awayDatasets);
-
-                    if (window.awayChart) {
-                        window.awayChart.destroy();
-                    }
-                    window.awayChart = new Chart(awayCtx, {
+                    awayChart = new Chart(awayCtx, {
                         type: 'line',
                         data: {
+                            labels: data.labels,
                             datasets: awayDatasets
                         },
-                        options: commonOptions
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Odds'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Away Team Odds History'
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false
+                                }
+                            }
+                        }
                     });
 
-                    // Hide the no data message if it exists
-                    const noDataMessage = document.getElementById('noDataMessage');
-                    if (noDataMessage) {
-                        noDataMessage.style.display = 'none';
-                    }
+                    console.log('[DEBUG] Charts updated successfully');
                 })
                 .catch(error => {
-                    console.error('Error fetching or processing data:', error);
-                    showNoDataMessage();
+                    console.error('[ERROR] Failed to fetch odds history:', error);
                 });
         }
 
-        function showNoDataMessage() {
-            // Remove existing charts
-            if (window.homeChart) {
-                window.homeChart.destroy();
-                window.homeChart = null;
+        // Helper function to generate random colors for bookmaker lines
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
             }
-            if (window.awayChart) {
-                window.awayChart.destroy();
-                window.awayChart = null;
-            }
-
-            // Create or update the no data message
-            let noDataMessage = document.getElementById('noDataMessage');
-            if (!noDataMessage) {
-                noDataMessage = document.createElement('div');
-                noDataMessage.id = 'noDataMessage';
-                noDataMessage.style.textAlign = 'center';
-                noDataMessage.style.padding = '20px';
-                noDataMessage.style.backgroundColor = '#f8f9fa';
-                noDataMessage.style.borderRadius = '8px';
-                noDataMessage.style.margin = '20px 0';
-                
-                const homeChartContainer = document.querySelector('.chart-container:first-of-type');
-                homeChartContainer.appendChild(noDataMessage);
-            }
-
-            noDataMessage.innerHTML = `
-                <h3 style="color: #2c3e50; margin-bottom: 10px;">No Odds Data Available</h3>
-                <p style="color: #666;">Odds data will be displayed here once it becomes available.</p>
-                <p style="color: #666; font-size: 0.9em;">Data is updated every 10 minutes.</p>
-            `;
-            noDataMessage.style.display = 'block';
+            return color;
         }
 
         // Initial data fetch
