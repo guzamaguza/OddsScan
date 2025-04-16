@@ -70,6 +70,8 @@ def odds_history(uuid):
     historical_odds = event.historical_odds.order_by(HistoricalOdds.created_at.asc()).all()
     
     print(f"Debug: Found {len(historical_odds)} historical odds records for event {uuid}")
+    print(f"Debug: Event details - Home: {event.home_team}, Away: {event.away_team}")
+    print(f"Debug: Current bookmakers: {event.bookmakers}")
     
     # Get unique bookmaker names
     bookmaker_names = set()
@@ -77,10 +79,12 @@ def odds_history(uuid):
         if odds.bookmakers:
             for bookmaker in odds.bookmakers:
                 bookmaker_names.add(bookmaker.get('title'))
+                print(f"Debug: Historical bookmaker: {bookmaker.get('title')}")
     # Also include current bookmakers
     if event.bookmakers:
         for bookmaker in event.bookmakers:
             bookmaker_names.add(bookmaker.get('title'))
+            print(f"Debug: Current bookmaker: {bookmaker.get('title')}")
     bookmaker_names = sorted(list(bookmaker_names))
     
     print(f"Debug: Found {len(bookmaker_names)} unique bookmakers: {bookmaker_names}")
@@ -118,25 +122,28 @@ def odds_history(uuid):
                                     price = float(outcome.get('price'))
                                     if outcome.get('name') == event.home_team:
                                         chart_data['home_odds'][bookmaker_name][-1] = price
+                                        print(f"Debug: Added home odds {price} for {bookmaker_name} at {created_at_utc}")
                                     elif outcome.get('name') == event.away_team:
                                         chart_data['away_odds'][bookmaker_name][-1] = price
+                                        print(f"Debug: Added away odds {price} for {bookmaker_name} at {created_at_utc}")
                                     elif outcome.get('name') == 'Draw':
                                         chart_data['draw_odds'][bookmaker_name][-1] = price
+                                        print(f"Debug: Added draw odds {price} for {bookmaker_name} at {created_at_utc}")
                                 except (ValueError, TypeError):
                                     print(f"Debug: Invalid price value for {bookmaker_name}: {outcome.get('price')}")
     
-    # Add current odds data
+    # Always add current odds data
+    current_time = datetime.now(timezone.utc)
+    chart_data['labels'].append(current_time.strftime('%Y-%m-%d %H:%M:%S'))
+    
+    # Initialize odds for current timestamp
+    for bookmaker in bookmaker_names:
+        chart_data['home_odds'][bookmaker].append(None)
+        chart_data['away_odds'][bookmaker].append(None)
+        chart_data['draw_odds'][bookmaker].append(None)
+    
+    # Get current odds for each bookmaker
     if event.bookmakers:
-        current_time = datetime.now(timezone.utc)
-        chart_data['labels'].append(current_time.strftime('%Y-%m-%d %H:%M:%S'))
-        
-        # Initialize odds for current timestamp
-        for bookmaker in bookmaker_names:
-            chart_data['home_odds'][bookmaker].append(None)
-            chart_data['away_odds'][bookmaker].append(None)
-            chart_data['draw_odds'][bookmaker].append(None)
-        
-        # Get current odds for each bookmaker
         for bookmaker in event.bookmakers:
             bookmaker_name = bookmaker.get('title')
             if bookmaker_name in bookmaker_names:
@@ -147,12 +154,24 @@ def odds_history(uuid):
                                 price = float(outcome.get('price'))
                                 if outcome.get('name') == event.home_team:
                                     chart_data['home_odds'][bookmaker_name][-1] = price
+                                    print(f"Debug: Added current home odds {price} for {bookmaker_name}")
                                 elif outcome.get('name') == event.away_team:
                                     chart_data['away_odds'][bookmaker_name][-1] = price
+                                    print(f"Debug: Added current away odds {price} for {bookmaker_name}")
                                 elif outcome.get('name') == 'Draw':
                                     chart_data['draw_odds'][bookmaker_name][-1] = price
+                                    print(f"Debug: Added current draw odds {price} for {bookmaker_name}")
                             except (ValueError, TypeError):
-                                print(f"Debug: Invalid price value for {bookmaker_name}: {outcome.get('price')}")
+                                print(f"Debug: Invalid current price value for {bookmaker_name}: {outcome.get('price')}")
+    
+    # If we have no data points at all, add a dummy point to prevent chart errors
+    if len(chart_data['labels']) == 0:
+        print("Debug: No data points found, adding dummy point")
+        chart_data['labels'].append(current_time.strftime('%Y-%m-%d %H:%M:%S'))
+        for bookmaker in bookmaker_names:
+            chart_data['home_odds'][bookmaker].append(None)
+            chart_data['away_odds'][bookmaker].append(None)
+            chart_data['draw_odds'][bookmaker].append(None)
     
     print(f"Debug: Generated chart data with {len(chart_data['labels'])} timestamps")
     print(f"Debug: Sample home odds: {chart_data['home_odds'][bookmaker_names[0] if bookmaker_names else '']}")
