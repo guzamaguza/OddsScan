@@ -226,6 +226,7 @@
     <script>
         // Function to fetch and update chart data
         function updateCharts() {
+            console.log('Fetching data from:', '/match/{{ event.uuid }}/odds-history');
             fetch('/match/{{ event.uuid }}/odds-history')
                 .then(response => {
                     console.log('Response status:', response.status);
@@ -248,6 +249,12 @@
                         });
                         return;
                     }
+
+                    console.log('Data validation passed. Processing charts...');
+                    console.log('Labels:', data.labels);
+                    console.log('Bookmakers:', data.bookmakers);
+                    console.log('Sample home odds:', data.home_odds[data.bookmakers[0]]);
+                    console.log('Sample away odds:', data.away_odds[data.bookmakers[0]]);
 
                     // Generate colors for each bookmaker
                     const colors = [
@@ -381,12 +388,16 @@
                         const color = colors[index % colors.length];
                         const opacity = 0.2;
                         
+                        const points = data.home_odds[bookmaker].map((value, i) => ({
+                            x: new Date(data.labels[i]),
+                            y: value
+                        })).filter(point => point.y !== null);
+
+                        console.log(`Home odds for ${bookmaker}:`, points);
+                        
                         return {
                             label: bookmaker,
-                            data: data.home_odds[bookmaker].map((value, i) => ({
-                                x: new Date(data.labels[i]),
-                                y: value
-                            })).filter(point => point.y !== null),
+                            data: points,
                             borderColor: color,
                             backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
                             tension: 0.1,
@@ -396,6 +407,8 @@
                             showLine: true
                         };
                     });
+
+                    console.log('Creating home chart with datasets:', homeDatasets);
 
                     if (window.homeChart) {
                         window.homeChart.destroy();
@@ -414,12 +427,16 @@
                         const color = colors[index % colors.length];
                         const opacity = 0.2;
                         
+                        const points = data.away_odds[bookmaker].map((value, i) => ({
+                            x: new Date(data.labels[i]),
+                            y: value
+                        })).filter(point => point.y !== null);
+
+                        console.log(`Away odds for ${bookmaker}:`, points);
+                        
                         return {
                             label: bookmaker,
-                            data: data.away_odds[bookmaker].map((value, i) => ({
-                                x: new Date(data.labels[i]),
-                                y: value
-                            })).filter(point => point.y !== null),
+                            data: points,
                             borderColor: color,
                             backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
                             tension: 0.1,
@@ -429,6 +446,8 @@
                             showLine: true
                         };
                     });
+
+                    console.log('Creating away chart with datasets:', awayDatasets);
 
                     if (window.awayChart) {
                         window.awayChart.destroy();
@@ -447,6 +466,7 @@
         }
 
         // Initial data fetch
+        console.log('Starting initial data fetch...');
         updateCharts();
 
         // Set up interval to fetch new data every 10 minutes (600000 milliseconds)
