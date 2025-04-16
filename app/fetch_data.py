@@ -1,6 +1,6 @@
 import requests
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
 
@@ -9,8 +9,12 @@ BASE_URL = "https://api.the-odds-api.com/v4"
 
 def fetch_odds(db):
     """Fetch and store odds data from the API"""
-    from app.models import OddsEvent
+    from app.models import OddsEvent, HistoricalOdds
 
+    # Get current time in UTC
+    now = datetime.now(timezone.utc)
+    
+    # Get odds for upcoming games
     url = f"{BASE_URL}/sports/basketball_nba/odds"
     params = {
         "regions": "us",
@@ -36,6 +40,15 @@ def fetch_odds(db):
                 existing_event = OddsEvent.query.filter_by(id=event["id"]).first()
                 
                 if existing_event:
+                    # Store current odds as historical data before updating
+                    if existing_event.bookmakers:
+                        historical_odds = HistoricalOdds(
+                            event_id=existing_event.uuid,
+                            bookmakers=existing_event.bookmakers,
+                            created_at=datetime.now(timezone.utc)
+                        )
+                        db.session.add(historical_odds)
+                    
                     # Update existing event
                     existing_event.bookmakers = event["bookmakers"]
                     print(f"[INFO] Updated existing OddsEvent: {existing_event.uuid}")
