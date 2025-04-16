@@ -183,14 +183,17 @@
                                     label: {
                                         content: 'Start Time',
                                         enabled: true,
-                                        position: 'center',
+                                        position: 'start',
                                         backgroundColor: 'rgb(255, 0, 0)',
                                         color: 'white',
                                         font: {
-                                            size: 12
+                                            size: 12,
+                                            weight: 'bold'
                                         },
                                         rotation: 90,
-                                        yAdjust: -30
+                                        yAdjust: -50,
+                                        xAdjust: 5,
+                                        padding: 6
                                     }
                                 },
                                 currentTime: {
@@ -202,14 +205,17 @@
                                     label: {
                                         content: 'Current Time',
                                         enabled: true,
-                                        position: 'center',
+                                        position: 'start',
                                         backgroundColor: 'rgb(0, 128, 0)',
                                         color: 'white',
                                         font: {
-                                            size: 12
+                                            size: 12,
+                                            weight: 'bold'
                                         },
                                         rotation: 90,
-                                        yAdjust: -30
+                                        yAdjust: -50,
+                                        xAdjust: 5,
+                                        padding: 6
                                     }
                                 }
                             }
@@ -251,6 +257,48 @@
                         }
                     }
                 };
+
+                // Add custom plugin for vertical line labels
+                const verticalLineLabels = {
+                    id: 'verticalLineLabels',
+                    afterDraw(chart) {
+                        const {ctx, chartArea: {top, bottom, left, right}} = chart;
+                        const annotations = chart.options.plugins.annotation.annotations;
+                        
+                        // Draw Start Time label
+                        if (annotations.gameStart) {
+                            const startX = chart.scales.x.getPixelForValue(new Date(data.commence_time));
+                            ctx.save();
+                            ctx.translate(startX, bottom + 20);
+                            ctx.rotate(-Math.PI / 2);
+                            ctx.fillStyle = 'rgb(255, 0, 0)';
+                            ctx.fillRect(0, 0, 20, 80);
+                            ctx.fillStyle = 'white';
+                            ctx.font = 'bold 12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Start Time', 10, 15);
+                            ctx.restore();
+                        }
+
+                        // Draw Current Time label
+                        if (annotations.currentTime) {
+                            const currentX = chart.scales.x.getPixelForValue(new Date());
+                            ctx.save();
+                            ctx.translate(currentX, bottom + 20);
+                            ctx.rotate(-Math.PI / 2);
+                            ctx.fillStyle = 'rgb(0, 128, 0)';
+                            ctx.fillRect(0, 0, 20, 80);
+                            ctx.fillStyle = 'white';
+                            ctx.font = 'bold 12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Current Time', 10, 15);
+                            ctx.restore();
+                        }
+                    }
+                };
+
+                // Add the custom plugin to the options
+                commonOptions.plugins.verticalLineLabels = verticalLineLabels;
 
                 // Create home team odds chart
                 const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
@@ -318,4 +366,3 @@
     </script>
 </body>
 </html>
-
