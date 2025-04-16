@@ -102,6 +102,9 @@
     </div>
 
     <script>
+        // Register the annotation plugin
+        Chart.register(ChartAnnotation);
+
         // Fetch odds history data
         fetch('/match/{{ event.uuid }}/odds-history')
             .then(response => {
@@ -171,48 +174,6 @@
                                 usePointStyle: true,
                                 pointStyle: 'line'
                             }
-                        },
-                        annotation: {
-                            annotations: {
-                                gameStart: {
-                                    type: 'line',
-                                    xMin: new Date(data.commence_time),
-                                    xMax: new Date(data.commence_time),
-                                    borderColor: 'rgb(255, 0, 0)',
-                                    borderWidth: 2,
-                                    label: {
-                                        content: 'START',
-                                        enabled: true,
-                                        position: 'top',
-                                        backgroundColor: 'rgb(255, 0, 0)',
-                                        color: 'white',
-                                        font: {
-                                            size: 14,
-                                            weight: 'bold'
-                                        },
-                                        padding: 6
-                                    }
-                                },
-                                currentTime: {
-                                    type: 'line',
-                                    xMin: new Date(),
-                                    xMax: new Date(),
-                                    borderColor: 'rgb(0, 128, 0)',
-                                    borderWidth: 2,
-                                    label: {
-                                        content: 'NOW',
-                                        enabled: true,
-                                        position: 'top',
-                                        backgroundColor: 'rgb(0, 128, 0)',
-                                        color: 'white',
-                                        font: {
-                                            size: 14,
-                                            weight: 'bold'
-                                        },
-                                        padding: 6
-                                    }
-                                }
-                            }
                         }
                     },
                     scales: {
@@ -252,48 +213,6 @@
                     }
                 };
 
-                // Add custom plugin for vertical line labels
-                const verticalLineLabels = {
-                    id: 'verticalLineLabels',
-                    afterDraw(chart) {
-                        const {ctx, chartArea: {top, bottom, left, right}} = chart;
-                        const annotations = chart.options.plugins.annotation.annotations;
-                        
-                        // Draw Start Time label
-                        if (annotations.gameStart) {
-                            const startX = chart.scales.x.getPixelForValue(new Date(data.commence_time));
-                            ctx.save();
-                            ctx.translate(startX, bottom + 20);
-                            ctx.rotate(-Math.PI / 2);
-                            ctx.fillStyle = 'rgb(255, 0, 0)';
-                            ctx.fillRect(0, 0, 20, 80);
-                            ctx.fillStyle = 'white';
-                            ctx.font = 'bold 12px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.fillText('Start Time', 10, 15);
-                            ctx.restore();
-                        }
-
-                        // Draw Current Time label
-                        if (annotations.currentTime) {
-                            const currentX = chart.scales.x.getPixelForValue(new Date());
-                            ctx.save();
-                            ctx.translate(currentX, bottom + 20);
-                            ctx.rotate(-Math.PI / 2);
-                            ctx.fillStyle = 'rgb(0, 128, 0)';
-                            ctx.fillRect(0, 0, 20, 80);
-                            ctx.fillStyle = 'white';
-                            ctx.font = 'bold 12px Arial';
-                            ctx.textAlign = 'center';
-                            ctx.fillText('Current Time', 10, 15);
-                            ctx.restore();
-                        }
-                    }
-                };
-
-                // Add the custom plugin to the options
-                commonOptions.plugins.verticalLineLabels = verticalLineLabels;
-
                 // Create home team odds chart
                 const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
                 const homeDatasets = data.bookmakers.map((bookmaker, index) => {
@@ -316,13 +235,58 @@
                     };
                 });
 
-                new Chart(homeCtx, {
+                const homeChart = new Chart(homeCtx, {
                     type: 'line',
                     data: {
                         datasets: homeDatasets
                     },
                     options: commonOptions
                 });
+
+                // Add vertical lines to home chart
+                homeChart.options.plugins.annotation = {
+                    annotations: {
+                        gameStart: {
+                            type: 'line',
+                            xMin: new Date(data.commence_time),
+                            xMax: new Date(data.commence_time),
+                            borderColor: 'rgb(255, 0, 0)',
+                            borderWidth: 2,
+                            label: {
+                                content: 'START',
+                                enabled: true,
+                                position: 'top',
+                                backgroundColor: 'rgb(255, 0, 0)',
+                                color: 'white',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 6
+                            }
+                        },
+                        currentTime: {
+                            type: 'line',
+                            xMin: new Date(),
+                            xMax: new Date(),
+                            borderColor: 'rgb(0, 128, 0)',
+                            borderWidth: 2,
+                            label: {
+                                content: 'NOW',
+                                enabled: true,
+                                position: 'top',
+                                backgroundColor: 'rgb(0, 128, 0)',
+                                color: 'white',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 6
+                            }
+                        }
+                    }
+                };
+                homeChart.update();
 
                 // Create away team odds chart
                 const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
@@ -346,13 +310,58 @@
                     };
                 });
 
-                new Chart(awayCtx, {
+                const awayChart = new Chart(awayCtx, {
                     type: 'line',
                     data: {
                         datasets: awayDatasets
                     },
                     options: commonOptions
                 });
+
+                // Add vertical lines to away chart
+                awayChart.options.plugins.annotation = {
+                    annotations: {
+                        gameStart: {
+                            type: 'line',
+                            xMin: new Date(data.commence_time),
+                            xMax: new Date(data.commence_time),
+                            borderColor: 'rgb(255, 0, 0)',
+                            borderWidth: 2,
+                            label: {
+                                content: 'START',
+                                enabled: true,
+                                position: 'top',
+                                backgroundColor: 'rgb(255, 0, 0)',
+                                color: 'white',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 6
+                            }
+                        },
+                        currentTime: {
+                            type: 'line',
+                            xMin: new Date(),
+                            xMax: new Date(),
+                            borderColor: 'rgb(0, 128, 0)',
+                            borderWidth: 2,
+                            label: {
+                                content: 'NOW',
+                                enabled: true,
+                                position: 'top',
+                                backgroundColor: 'rgb(0, 128, 0)',
+                                color: 'white',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: 6
+                            }
+                        }
+                    }
+                };
+                awayChart.update();
             })
             .catch(error => {
                 console.error('Error fetching or processing data:', error);
