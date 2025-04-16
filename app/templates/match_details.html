@@ -247,11 +247,26 @@
                             away_odds: !!data.away_odds,
                             draw_odds: !!data.draw_odds
                         });
+                        showNoDataMessage();
                         return;
                     }
 
                     if (data.labels.length === 0) {
                         console.log('No data points available for charts');
+                        showNoDataMessage();
+                        return;
+                    }
+
+                    // Check if we have any valid data points
+                    const hasValidData = data.bookmakers.some(bookmaker => {
+                        const homeOdds = data.home_odds[bookmaker];
+                        const awayOdds = data.away_odds[bookmaker];
+                        return homeOdds.some(odds => odds !== null) || awayOdds.some(odds => odds !== null);
+                    });
+
+                    if (!hasValidData) {
+                        console.log('No valid odds data available');
+                        showNoDataMessage();
                         return;
                     }
 
@@ -464,10 +479,51 @@
                         },
                         options: commonOptions
                     });
+
+                    // Hide the no data message if it exists
+                    const noDataMessage = document.getElementById('noDataMessage');
+                    if (noDataMessage) {
+                        noDataMessage.style.display = 'none';
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching or processing data:', error);
+                    showNoDataMessage();
                 });
+        }
+
+        function showNoDataMessage() {
+            // Remove existing charts
+            if (window.homeChart) {
+                window.homeChart.destroy();
+                window.homeChart = null;
+            }
+            if (window.awayChart) {
+                window.awayChart.destroy();
+                window.awayChart = null;
+            }
+
+            // Create or update the no data message
+            let noDataMessage = document.getElementById('noDataMessage');
+            if (!noDataMessage) {
+                noDataMessage = document.createElement('div');
+                noDataMessage.id = 'noDataMessage';
+                noDataMessage.style.textAlign = 'center';
+                noDataMessage.style.padding = '20px';
+                noDataMessage.style.backgroundColor = '#f8f9fa';
+                noDataMessage.style.borderRadius = '8px';
+                noDataMessage.style.margin = '20px 0';
+                
+                const homeChartContainer = document.querySelector('.chart-container:first-of-type');
+                homeChartContainer.appendChild(noDataMessage);
+            }
+
+            noDataMessage.innerHTML = `
+                <h3 style="color: #2c3e50; margin-bottom: 10px;">No Odds Data Available</h3>
+                <p style="color: #666;">Odds data will be displayed here once it becomes available.</p>
+                <p style="color: #666; font-size: 0.9em;">Data is updated every 10 minutes.</p>
+            `;
+            noDataMessage.style.display = 'block';
         }
 
         // Initial data fetch
