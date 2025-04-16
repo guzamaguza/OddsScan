@@ -1,324 +1,251 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <title>OddsScan - Sports Betting Odds Tracker</title>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --text-color: #2c3e50;
+            --border-color: #e9ecef;
+            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --header-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        }
+
+        body {
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        .match-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .odds-section, .score-section, .chart-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .bookmaker {
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 3px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #007bff;
+
+        .header {
+            background: var(--header-gradient);
             color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            text-align: center;
+            margin: 15px 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        .event-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .event-item {
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .event-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            border-color: var(--secondary-color);
+        }
+
+        .event-item a {
             text-decoration: none;
-            border-radius: 5px;
+            color: var(--text-color);
+            display: block;
         }
-        .back-link:hover {
-            background-color: #0056b3;
+
+        .event-item strong {
+            color: var(--primary-color);
+            font-size: 1.2em;
+            font-weight: 600;
         }
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
+
+        .event-item em {
+            color: var(--accent-color);
+            font-style: normal;
+            float: right;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-ongoing {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .status-upcoming {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .status-past {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            color: #7f8c8d;
+            font-style: italic;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                padding: 30px 0;
+            }
+
+            .header h1 {
+                font-size: 2.2em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .event-item {
+                padding: 15px;
+            }
+
+            .event-item em {
+                float: none;
+                display: block;
+                margin-top: 8px;
+            }
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="match-header">
-            <h1>{{ event.home_team }} vs {{ event.away_team }}</h1>
-            <p>Time: {{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            <p>Sport: {{ event.sport_title }}</p>
+    <div class="header">
+        <div class="container">
+            <h1>OddsScan</h1>
+            <p>Professional Sports Betting Odds Analysis</p>
         </div>
-
-        {% if score %}
-        <div class="score-section">
-            <h2>Score</h2>
-            <p>Status: {{ 'Completed' if score.completed else 'In Progress' }}</p>
-            {% if score.scores %}
-                {% for team_score in score.scores %}
-                    <p>{{ team_score.name }}: {{ team_score.score }}</p>
-                {% endfor %}
-            {% else %}
-                <p>No score available yet</p>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="chart-section">
-            <h2>Odds History</h2>
-            <div style="margin-bottom: 20px; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">
-                <span style="color: rgb(0, 128, 0); font-weight: bold;">●</span> Current Time &nbsp;&nbsp;
-                <span style="color: rgb(255, 0, 0); font-weight: bold;">●</span> Game Start Time
-            </div>
-            <div class="chart-container">
-                <h3>{{ event.home_team }} Odds</h3>
-                <canvas id="homeOddsChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3>{{ event.away_team }} Odds</h3>
-                <canvas id="awayOddsChart"></canvas>
-            </div>
-        </div>
-
-        {% if event.bookmakers %}
-        <div class="odds-section">
-            <h2>Current Odds</h2>
-            {% for bookmaker in event.bookmakers %}
-                <div class="bookmaker">
-                    <h3>{{ bookmaker.title }}</h3>
-                    {% for market in bookmaker.markets %}
-                        {% if market.key == 'h2h' %}
-                            {% for outcome in market.outcomes %}
-                                <p>{{ outcome.name }}: {{ outcome.price }}</p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <a href="{{ url_for('main.home') }}" class="back-link">Back to Matches</a>
     </div>
 
-    <script>
-        // Fetch odds history data
-        fetch('/match/{{ event.uuid }}/odds-history')
-            .then(response => {
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Raw data received:', data);
-                
-                // Check if we have valid data
-                if (!data.labels || !data.bookmakers || !data.home_odds || !data.away_odds || !data.draw_odds) {
-                    console.error('Missing required data fields:', {
-                        labels: !!data.labels,
-                        bookmakers: !!data.bookmakers,
-                        home_odds: !!data.home_odds,
-                        away_odds: !!data.away_odds,
-                        draw_odds: !!data.draw_odds
-                    });
-                    return;
-                }
+    <div class="container">
+        <div class="section">
+            <h2>Live Matches</h2>
+            {% if ongoing_events %}
+                <ul class="event-list">
+                    {% for event in ongoing_events %}
+                        <li class="event-item">
+                            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong>
+                                <span class="status-badge status-ongoing">Live</span>
+                                <em>{{ event.commence_time.strftime('%H:%M') }}</em>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-message">No live matches at the moment</p>
+            {% endif %}
+        </div>
 
-                // Generate colors for each bookmaker
-                const colors = [
-                    'rgb(255, 99, 132)',    // Red
-                    'rgb(54, 162, 235)',    // Blue
-                    'rgb(255, 206, 86)',    // Yellow
-                    'rgb(75, 192, 192)',    // Teal
-                    'rgb(153, 102, 255)',   // Purple
-                    'rgb(255, 159, 64)',    // Orange
-                    'rgb(199, 199, 199)',   // Gray
-                    'rgb(83, 102, 255)',    // Indigo
-                    'rgb(40, 167, 69)',     // Green
-                    'rgb(220, 53, 69)'      // Dark Red
-                ];
+        <div class="section">
+            <h2>Upcoming Matches</h2>
+            {% if upcoming_events %}
+                <ul class="event-list">
+                    {% for event in upcoming_events %}
+                        <li class="event-item">
+                            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong>
+                                <span class="status-badge status-upcoming">Upcoming</span>
+                                <em>{{ event.commence_time.strftime('%H:%M') }}</em>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-message">No upcoming matches scheduled</p>
+            {% endif %}
+        </div>
 
-                // Common chart options
-                const commonOptions = {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += context.parsed.y.toFixed(2);
-                                    }
-                                    return label;
-                                }
-                            }
-                        },
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                pointStyle: 'line'
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                gameStart: {
-                                    type: 'line',
-                                    xMin: new Date(data.commence_time),
-                                    xMax: new Date(data.commence_time),
-                                    borderColor: 'rgb(255, 0, 0)',
-                                    borderWidth: 2,
-                                    label: {
-                                        content: 'START',
-                                        enabled: true,
-                                        position: 'top',
-                                        backgroundColor: 'rgb(255, 0, 0)',
-                                        color: 'white',
-                                        font: {
-                                            size: 14,
-                                            weight: 'bold'
-                                        },
-                                        padding: 6
-                                    }
-                                },
-                                currentTime: {
-                                    type: 'line',
-                                    xMin: new Date(),
-                                    xMax: new Date(),
-                                    borderColor: 'rgb(0, 128, 0)',
-                                    borderWidth: 2,
-                                    label: {
-                                        content: 'NOW',
-                                        enabled: true,
-                                        position: 'top',
-                                        backgroundColor: 'rgb(0, 128, 0)',
-                                        color: 'white',
-                                        font: {
-                                            size: 14,
-                                            weight: 'bold'
-                                        },
-                                        padding: 6
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Odds'
-                            },
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'minute',
-                                displayFormats: {
-                                    minute: 'MMM d, HH:mm'
-                                },
-                                parser: 'yyyy-MM-dd HH:mm:ss'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            },
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        }
-                    }
-                };
-
-                // Create home team odds chart
-                const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
-                const homeDatasets = data.bookmakers.map((bookmaker, index) => {
-                    const color = colors[index % colors.length];
-                    const opacity = 0.2;
-                    
-                    return {
-                        label: bookmaker,
-                        data: data.home_odds[bookmaker].map((value, i) => ({
-                            x: new Date(data.labels[i]),
-                            y: value
-                        })).filter(point => point.y !== null),
-                        borderColor: color,
-                        backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
-                        tension: 0.1,
-                        pointStyle: 'circle',
-                        pointRadius: 3,
-                        pointHoverRadius: 6,
-                        showLine: true
-                    };
-                });
-
-                new Chart(homeCtx, {
-                    type: 'line',
-                    data: {
-                        datasets: homeDatasets
-                    },
-                    options: commonOptions
-                });
-
-                // Create away team odds chart
-                const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
-                const awayDatasets = data.bookmakers.map((bookmaker, index) => {
-                    const color = colors[index % colors.length];
-                    const opacity = 0.2;
-                    
-                    return {
-                        label: bookmaker,
-                        data: data.away_odds[bookmaker].map((value, i) => ({
-                            x: new Date(data.labels[i]),
-                            y: value
-                        })).filter(point => point.y !== null),
-                        borderColor: color,
-                        backgroundColor: color.replace('rgb', 'rgba').replace(')', `, ${opacity})`),
-                        tension: 0.1,
-                        pointStyle: 'circle',
-                        pointRadius: 3,
-                        pointHoverRadius: 6,
-                        showLine: true
-                    };
-                });
-
-                new Chart(awayCtx, {
-                    type: 'line',
-                    data: {
-                        datasets: awayDatasets
-                    },
-                    options: commonOptions
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching or processing data:', error);
-            });
-    </script>
+        <div class="section">
+            <h2>Recent Matches</h2>
+            {% if past_events %}
+                <ul class="event-list">
+                    {% for event in past_events %}
+                        <li class="event-item">
+                            <a href="{{ url_for('main.match_details', uuid=event.uuid) }}">
+                                <strong>{{ event.home_team }} vs {{ event.away_team }}</strong>
+                                <span class="status-badge status-past">Completed</span>
+                                <em>{{ event.commence_time.strftime('%H:%M') }}</em>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="empty-message">No recent matches available</p>
+            {% endif %}
+        </div>
+    </div>
 </body>
 </html>
+
