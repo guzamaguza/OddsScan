@@ -3,7 +3,7 @@
 <head>
     <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
         .container {
@@ -102,9 +102,6 @@
     </div>
 
     <script>
-        // Register the annotation plugin
-        Chart.register(ChartAnnotation);
-
         // Fetch odds history data
         fetch('/match/{{ event.uuid }}/odds-history')
             .then(response => {
@@ -174,6 +171,48 @@
                                 usePointStyle: true,
                                 pointStyle: 'line'
                             }
+                        },
+                        annotation: {
+                            annotations: {
+                                gameStart: {
+                                    type: 'line',
+                                    xMin: new Date(data.commence_time),
+                                    xMax: new Date(data.commence_time),
+                                    borderColor: 'rgb(255, 0, 0)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'START',
+                                        enabled: true,
+                                        position: 'top',
+                                        backgroundColor: 'rgb(255, 0, 0)',
+                                        color: 'white',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        },
+                                        padding: 6
+                                    }
+                                },
+                                currentTime: {
+                                    type: 'line',
+                                    xMin: new Date(),
+                                    xMax: new Date(),
+                                    borderColor: 'rgb(0, 128, 0)',
+                                    borderWidth: 2,
+                                    label: {
+                                        content: 'NOW',
+                                        enabled: true,
+                                        position: 'top',
+                                        backgroundColor: 'rgb(0, 128, 0)',
+                                        color: 'white',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        },
+                                        padding: 6
+                                    }
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -235,58 +274,13 @@
                     };
                 });
 
-                const homeChart = new Chart(homeCtx, {
+                new Chart(homeCtx, {
                     type: 'line',
                     data: {
                         datasets: homeDatasets
                     },
                     options: commonOptions
                 });
-
-                // Add vertical lines to home chart
-                homeChart.options.plugins.annotation = {
-                    annotations: {
-                        gameStart: {
-                            type: 'line',
-                            xMin: new Date(data.commence_time),
-                            xMax: new Date(data.commence_time),
-                            borderColor: 'rgb(255, 0, 0)',
-                            borderWidth: 2,
-                            label: {
-                                content: 'START',
-                                enabled: true,
-                                position: 'top',
-                                backgroundColor: 'rgb(255, 0, 0)',
-                                color: 'white',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                padding: 6
-                            }
-                        },
-                        currentTime: {
-                            type: 'line',
-                            xMin: new Date(),
-                            xMax: new Date(),
-                            borderColor: 'rgb(0, 128, 0)',
-                            borderWidth: 2,
-                            label: {
-                                content: 'NOW',
-                                enabled: true,
-                                position: 'top',
-                                backgroundColor: 'rgb(0, 128, 0)',
-                                color: 'white',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                padding: 6
-                            }
-                        }
-                    }
-                };
-                homeChart.update();
 
                 // Create away team odds chart
                 const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
@@ -310,58 +304,13 @@
                     };
                 });
 
-                const awayChart = new Chart(awayCtx, {
+                new Chart(awayCtx, {
                     type: 'line',
                     data: {
                         datasets: awayDatasets
                     },
                     options: commonOptions
                 });
-
-                // Add vertical lines to away chart
-                awayChart.options.plugins.annotation = {
-                    annotations: {
-                        gameStart: {
-                            type: 'line',
-                            xMin: new Date(data.commence_time),
-                            xMax: new Date(data.commence_time),
-                            borderColor: 'rgb(255, 0, 0)',
-                            borderWidth: 2,
-                            label: {
-                                content: 'START',
-                                enabled: true,
-                                position: 'top',
-                                backgroundColor: 'rgb(255, 0, 0)',
-                                color: 'white',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                padding: 6
-                            }
-                        },
-                        currentTime: {
-                            type: 'line',
-                            xMin: new Date(),
-                            xMax: new Date(),
-                            borderColor: 'rgb(0, 128, 0)',
-                            borderWidth: 2,
-                            label: {
-                                content: 'NOW',
-                                enabled: true,
-                                position: 'top',
-                                backgroundColor: 'rgb(0, 128, 0)',
-                                color: 'white',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                padding: 6
-                            }
-                        }
-                    }
-                };
-                awayChart.update();
             })
             .catch(error => {
                 console.error('Error fetching or processing data:', error);
