@@ -81,10 +81,21 @@ def odds_history(uuid):
     print(f"- Home Team: {event.home_team}")
     print(f"- Away Team: {event.away_team}")
     print(f"- Current Bookmakers: {len(event.bookmakers) if event.bookmakers else 0}")
+    if event.bookmakers:
+        print(f"- Bookmaker details:")
+        for bookmaker in event.bookmakers:
+            print(f"  - {bookmaker.get('key', 'unknown')}: {len(bookmaker.get('markets', []))} markets")
+            for market in bookmaker.get('markets', []):
+                print(f"    - {market.get('key', 'unknown')}: {len(market.get('outcomes', []))} outcomes")
 
     # Get historical odds
     historical_odds = HistoricalOdds.query.filter_by(event_id=uuid).order_by(HistoricalOdds.created_at).all()
     print(f"[DEBUG] Found {len(historical_odds)} historical odds records")
+    if historical_odds:
+        print(f"- First historical record:")
+        first_history = historical_odds[0]
+        print(f"  - Created at: {first_history.created_at}")
+        print(f"  - Bookmakers: {len(first_history.bookmakers) if first_history.bookmakers else 0}")
 
     # Collect all unique bookmaker names
     bookmaker_names = set()
@@ -168,6 +179,7 @@ def odds_history(uuid):
     print(f"- Timestamps: {len(chart_data['labels'])}")
     print(f"- Sample home odds: {[chart_data['datasets']['home'][name][-1] for name in bookmaker_names]}")
     print(f"- Sample away odds: {[chart_data['datasets']['away'][name][-1] for name in bookmaker_names]}")
+    print(f"- Full chart data structure: {chart_data}")
 
     return jsonify(chart_data)
 
@@ -204,6 +216,7 @@ def debug_events():
 def debug_database():
     """Debug route to check database contents"""
     from app.models import OddsEvent, HistoricalOdds, Score
+    from datetime import datetime, timezone
     
     # Get counts
     odds_events = OddsEvent.query.count()
@@ -215,26 +228,43 @@ def debug_database():
     sample_history = HistoricalOdds.query.first()
     sample_score = Score.query.first()
     
+    # Get current time
+    now = datetime.now(timezone.utc)
+    
+    # Get event status counts
+    past_events = OddsEvent.query.filter(OddsEvent.commence_time < (now - timedelta(hours=2))).count()
+    ongoing_events = OddsEvent.query.filter(
+        OddsEvent.commence_time <= now,
+        OddsEvent.commence_time > (now - timedelta(hours=2))
+    ).count()
+    upcoming_events = OddsEvent.query.filter(OddsEvent.commence_time > now).count()
+    
     return jsonify({
         "counts": {
             "odds_events": odds_events,
             "historical_odds": historical_odds,
-            "scores": scores
+            "scores": scores,
+            "past_events": past_events,
+            "ongoing_events": ongoing_events,
+            "upcoming_events": upcoming_events
         },
         "sample_event": {
             "uuid": sample_event.uuid if sample_event else None,
             "home_team": sample_event.home_team if sample_event else None,
             "away_team": sample_event.away_team if sample_event else None,
+            "commence_time": sample_event.commence_time.strftime('%Y-%m-%d %H:%M:%S UTC') if sample_event else None,
             "bookmakers_count": len(sample_event.bookmakers) if sample_event and sample_event.bookmakers else 0
         },
         "sample_history": {
             "id": sample_history.id if sample_history else None,
             "event_id": sample_history.event_id if sample_history else None,
-            "created_at": sample_history.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if sample_history else None
+            "created_at": sample_history.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') if sample_history else None,
+            "bookmakers_count": len(sample_history.bookmakers) if sample_history and sample_history.bookmakers else 0
         },
         "sample_score": {
             "id": sample_score.id if sample_score else None,
             "event_id": sample_score.event_id if sample_score else None,
-            "completed": sample_score.completed if sample_score else None
+            "completed": sample_score.completed if sample_score else None,
+            "scores": sample_score.scores if sample_score else None
         }
     })
