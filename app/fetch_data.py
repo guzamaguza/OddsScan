@@ -73,6 +73,17 @@ def fetch_odds(db):
                         bookmakers=event["bookmakers"]
                     )
                     db.session.add(new_event)
+                    db.session.flush()  # Get the UUID for the new event
+                    
+                    # Store initial historical odds for new event
+                    print(f"[INFO] Storing initial historical odds for new event {new_event.uuid}")
+                    historical_odds = HistoricalOdds(
+                        event_id=new_event.uuid,
+                        bookmakers=event["bookmakers"],
+                        created_at=datetime.now(timezone.utc)
+                    )
+                    db.session.add(historical_odds)
+                    
                     print(f"[INFO] Created new OddsEvent: {new_event.uuid}")
                     print(f"- Home Team: {new_event.home_team}")
                     print(f"- Away Team: {new_event.away_team}")
