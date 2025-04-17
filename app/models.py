@@ -33,17 +33,19 @@ class HistoricalOdds(db.Model):
         return f"<HistoricalOdds(event_id={self.event_id}, created_at={self.created_at})>"
 
 class Score(db.Model):
+    """Model for storing game scores"""
     __tablename__ = 'scores'
-
+    
     id = db.Column(db.Integer, primary_key=True)
-    event_id = db.Column(db.String, db.ForeignKey('odds_events.uuid'), nullable=False)
-    completed = db.Column(db.Boolean, nullable=False)
+    event_id = db.Column(db.String(36), db.ForeignKey('odds_events.uuid'), nullable=False)
+    completed = db.Column(db.Boolean, default=False)
     commence_time = db.Column(db.DateTime, nullable=False)
-    home_team = db.Column(db.String, nullable=False)
-    away_team = db.Column(db.String, nullable=False)
-    scores = db.Column(JSON, nullable=True)
-
-    event = db.relationship('OddsEvent', backref=db.backref('scores', lazy=True))
-
+    home_team = db.Column(db.String(100), nullable=False)
+    away_team = db.Column(db.String(100), nullable=False)
+    scores = db.Column(db.JSON, nullable=True)
+    
+    # Relationship with OddsEvent
+    event = db.relationship('OddsEvent', backref=db.backref('score', uselist=False))
+    
     def __repr__(self):
-        return f"<Score(event_id={self.event_id}, completed={self.completed})"
+        return f"<Score {self.id}: {self.home_team} vs {self.away_team}>"
