@@ -295,7 +295,8 @@
                                     unit: 'minute',
                                     displayFormats: {
                                         minute: 'HH:mm'
-                                    }
+                                    },
+                                    parser: 'yyyy-MM-dd HH:mm:ss'
                                 },
                                 title: {
                                     display: true,
@@ -306,13 +307,19 @@
                                 title: {
                                     display: true,
                                     text: 'Odds'
-                                }
+                                },
+                                beginAtZero: false
                             }
                         },
                         plugins: {
                             tooltip: {
                                 mode: 'index',
-                                intersect: false
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y}`;
+                                    }
+                                }
                             },
                             legend: {
                                 position: 'top'
@@ -357,7 +364,7 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels,
+                        labels: data.labels.map(label => new Date(label)),
                         datasets: homeDatasets
                     }
                 });
@@ -370,7 +377,7 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels,
+                        labels: data.labels.map(label => new Date(label)),
                         datasets: awayDatasets
                     }
                 });
