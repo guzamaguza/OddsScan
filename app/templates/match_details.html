@@ -241,7 +241,7 @@
                 }
                 
                 const data = await response.json();
-                console.log("[DEBUG] Received data:", data);
+                console.log("[DEBUG] Raw data received:", JSON.stringify(data, null, 2));
                 
                 // Check if we have valid data
                 if (!data.labels || data.labels.length === 0) {
@@ -253,31 +253,50 @@
                 const bookmakerNames = Object.keys(data.datasets.home);
                 console.log("[DEBUG] Bookmakers found:", bookmakerNames);
                 
+                if (bookmakerNames.length === 0) {
+                    console.log("[DEBUG] No bookmakers found in data");
+                    return;
+                }
+                
                 // Prepare datasets for home team
-                const homeDatasets = bookmakerNames.map(name => ({
-                    label: name,
-                    data: data.datasets.home[name],
-                    borderColor: getRandomColor(),
-                    backgroundColor: 'rgba(0, 0, 0, 0)',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    fill: false,
-                    tension: 0.1
-                }));
+                const homeDatasets = bookmakerNames.map(name => {
+                    const values = data.datasets.home[name];
+                    console.log(`[DEBUG] Home team data for ${name}:`, values);
+                    return {
+                        label: name,
+                        data: values.map((value, index) => ({
+                            x: new Date(data.labels[index]),
+                            y: value
+                        })),
+                        borderColor: getRandomColor(),
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.1
+                    };
+                });
                 
                 // Prepare datasets for away team
-                const awayDatasets = bookmakerNames.map(name => ({
-                    label: name,
-                    data: data.datasets.away[name],
-                    borderColor: getRandomColor(),
-                    backgroundColor: 'rgba(0, 0, 0, 0)',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    fill: false,
-                    tension: 0.1
-                }));
+                const awayDatasets = bookmakerNames.map(name => {
+                    const values = data.datasets.away[name];
+                    console.log(`[DEBUG] Away team data for ${name}:`, values);
+                    return {
+                        label: name,
+                        data: values.map((value, index) => ({
+                            x: new Date(data.labels[index]),
+                            y: value
+                        })),
+                        borderColor: getRandomColor(),
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        fill: false,
+                        tension: 0.1
+                    };
+                });
                 
                 console.log("[DEBUG] Home datasets:", homeDatasets);
                 console.log("[DEBUG] Away datasets:", awayDatasets);
@@ -295,8 +314,7 @@
                                     unit: 'minute',
                                     displayFormats: {
                                         minute: 'HH:mm'
-                                    },
-                                    parser: 'yyyy-MM-dd HH:mm:ss'
+                                    }
                                 },
                                 title: {
                                     display: true,
@@ -364,7 +382,6 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels.map(label => new Date(label)),
                         datasets: homeDatasets
                     }
                 });
@@ -377,7 +394,6 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels.map(label => new Date(label)),
                         datasets: awayDatasets
                     }
                 });
