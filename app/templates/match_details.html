@@ -265,7 +265,7 @@
                     return {
                         label: name,
                         data: values.map((value, index) => ({
-                            x: new Date(data.labels[index]),
+                            x: data.labels[index],
                             y: value
                         })),
                         borderColor: getRandomColor(),
@@ -285,7 +285,7 @@
                     return {
                         label: name,
                         data: values.map((value, index) => ({
-                            x: new Date(data.labels[index]),
+                            x: data.labels[index],
                             y: value
                         })),
                         borderColor: getRandomColor(),
@@ -392,10 +392,7 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: homeDatasets.map(dataset => ({
-                            ...dataset,
-                            data: dataset.data.filter(point => point.y !== null)
-                        }))
+                        datasets: homeDatasets
                     }
                 });
                 
@@ -407,10 +404,7 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: awayDatasets.map(dataset => ({
-                            ...dataset,
-                            data: dataset.data.filter(point => point.y !== null)
-                        }))
+                        datasets: awayDatasets
                     }
                 });
                 
