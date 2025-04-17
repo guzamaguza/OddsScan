@@ -319,7 +319,9 @@
                                 title: {
                                     display: true,
                                     text: 'Time'
-                                }
+                                },
+                                min: new Date(Date.now() - 60 * 60000).toISOString(), // 1 hour before
+                                max: new Date(Date.now() + 60 * 60000).toISOString()  // 1 hour after
                             },
                             y: {
                                 title: {
@@ -406,8 +408,7 @@
                         datasets: homeDatasets.map(dataset => ({
                             ...dataset,
                             pointBackgroundColor: dataset.borderColor,
-                            pointBorderColor: dataset.borderColor,
-                            showLine: false  // Only show points, no lines
+                            pointBorderColor: dataset.borderColor
                         }))
                     }
                 });
@@ -423,8 +424,7 @@
                         datasets: awayDatasets.map(dataset => ({
                             ...dataset,
                             pointBackgroundColor: dataset.borderColor,
-                            pointBorderColor: dataset.borderColor,
-                            showLine: false  // Only show points, no lines
+                            pointBorderColor: dataset.borderColor
                         }))
                     }
                 });
