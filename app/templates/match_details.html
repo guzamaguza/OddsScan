@@ -326,7 +326,12 @@
                                     display: true,
                                     text: 'Odds'
                                 },
-                                beginAtZero: false
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(2);
+                                    }
+                                }
                             }
                         },
                         plugins: {
@@ -335,12 +340,17 @@
                                 intersect: false,
                                 callbacks: {
                                     label: function(context) {
-                                        return `${context.dataset.label}: ${context.parsed.y}`;
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`;
                                     }
                                 }
                             },
                             legend: {
-                                position: 'top'
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
                             },
                             annotation: {
                                 annotations: {
@@ -382,7 +392,10 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: homeDatasets
+                        datasets: homeDatasets.map(dataset => ({
+                            ...dataset,
+                            data: dataset.data.filter(point => point.y !== null)
+                        }))
                     }
                 });
                 
@@ -394,7 +407,10 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: awayDatasets
+                        datasets: awayDatasets.map(dataset => ({
+                            ...dataset,
+                            data: dataset.data.filter(point => point.y !== null)
+                        }))
                     }
                 });
                 
