@@ -316,6 +316,34 @@
                             },
                             legend: {
                                 position: 'top'
+                            },
+                            annotation: {
+                                annotations: {
+                                    currentTime: {
+                                        type: 'line',
+                                        xMin: new Date().toISOString(),
+                                        xMax: new Date().toISOString(),
+                                        borderColor: 'rgb(0, 128, 0)',
+                                        borderWidth: 2,
+                                        label: {
+                                            content: 'Current Time',
+                                            enabled: true,
+                                            position: 'top'
+                                        }
+                                    },
+                                    gameStart: {
+                                        type: 'line',
+                                        xMin: "{{ event.commence_time.isoformat() }}",
+                                        xMax: "{{ event.commence_time.isoformat() }}",
+                                        borderColor: 'rgb(255, 0, 0)',
+                                        borderWidth: 2,
+                                        label: {
+                                            content: 'Game Start',
+                                            enabled: true,
+                                            position: 'top'
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
