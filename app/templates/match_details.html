@@ -319,7 +319,9 @@
                                 title: {
                                     display: true,
                                     text: 'Time'
-                                }
+                                },
+                                min: new Date(Date.now() - 30 * 60000).toISOString(), // 30 minutes before
+                                max: new Date(Date.now() + 30 * 60000).toISOString()  // 30 minutes after
                             },
                             y: {
                                 title: {
@@ -380,6 +382,17 @@
                                     }
                                 }
                             }
+                        },
+                        elements: {
+                            point: {
+                                radius: 6,
+                                hoverRadius: 8,
+                                backgroundColor: 'white',
+                                borderWidth: 2
+                            },
+                            line: {
+                                tension: 0
+                            }
                         }
                     }
                 };
@@ -392,7 +405,11 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: homeDatasets
+                        datasets: homeDatasets.map(dataset => ({
+                            ...dataset,
+                            pointBackgroundColor: dataset.borderColor,
+                            pointBorderColor: dataset.borderColor
+                        }))
                     }
                 });
                 
@@ -404,7 +421,11 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: awayDatasets
+                        datasets: awayDatasets.map(dataset => ({
+                            ...dataset,
+                            pointBackgroundColor: dataset.borderColor,
+                            pointBorderColor: dataset.borderColor
+                        }))
                     }
                 });
                 
