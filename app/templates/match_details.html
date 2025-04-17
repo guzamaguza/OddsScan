@@ -160,7 +160,7 @@
 <body>
     <div class="header">
         <div class="container">
-            <h1>Match Details</h1>
+        <h1>Match Details</h1>
             <p>{{ event.sport_title }}</p>
         </div>
     </div>
@@ -224,143 +224,137 @@
     </div>
 
     <script>
-        // Function to fetch and update chart data
-        function updateCharts() {
-            console.log(`[DEBUG] Fetching odds history for event: ${eventId}`);
+        // Global variables for chart instances
+        let homeChart = null;
+        let awayChart = null;
+        const eventId = "{{ event.uuid }}";
+
+        async function updateCharts() {
+            console.log("[DEBUG] Starting chart update for event:", eventId);
             
-            fetch(`/match/${eventId}/odds-history`)
-                .then(response => {
-                    console.log(`[DEBUG] Response status: ${response.status}`);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(`[DEBUG] Received data:`, data);
-                    
-                    if (!data.labels || !data.datasets) {
-                        console.error('[ERROR] Invalid data structure received');
-                        return;
-                    }
-
-                    // Destroy existing charts if they exist
-                    if (homeChart) {
-                        homeChart.destroy();
-                    }
-                    if (awayChart) {
-                        awayChart.destroy();
-                    }
-
-                    // Get unique bookmaker names
-                    const bookmakerNames = Object.keys(data.datasets.home);
-                    console.log(`[DEBUG] Found ${bookmakerNames.length} bookmakers:`, bookmakerNames);
-
-                    // Prepare datasets for home team
-                    const homeDatasets = bookmakerNames.map(name => ({
-                        label: name,
-                        data: data.datasets.home[name],
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    }));
-
-                    // Prepare datasets for away team
-                    const awayDatasets = bookmakerNames.map(name => ({
-                        label: name,
-                        data: data.datasets.away[name],
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    }));
-
-                    // Create home team chart
-                    const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
-                    homeChart = new Chart(homeCtx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: homeDatasets
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: false,
-                                    title: {
-                                        display: true,
-                                        text: 'Odds'
+            try {
+                const response = await fetch(`/match/${eventId}/odds-history`);
+                console.log("[DEBUG] Fetch response status:", response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log("[DEBUG] Received data:", data);
+                
+                // Check if we have valid data
+                if (!data.labels || data.labels.length === 0) {
+                    console.log("[DEBUG] No data points available");
+                    return;
+                }
+                
+                // Get all bookmaker names
+                const bookmakerNames = Object.keys(data.datasets.home);
+                console.log("[DEBUG] Bookmakers found:", bookmakerNames);
+                
+                // Prepare datasets for home team
+                const homeDatasets = bookmakerNames.map(name => ({
+                    label: name,
+                    data: data.datasets.home[name],
+                    borderColor: getRandomColor(),
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0.1
+                }));
+                
+                // Prepare datasets for away team
+                const awayDatasets = bookmakerNames.map(name => ({
+                    label: name,
+                    data: data.datasets.away[name],
+                    borderColor: getRandomColor(),
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0.1
+                }));
+                
+                console.log("[DEBUG] Home datasets:", homeDatasets);
+                console.log("[DEBUG] Away datasets:", awayDatasets);
+                
+                // Chart configuration
+                const chartConfig = {
+                    type: 'line',
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'minute',
+                                    displayFormats: {
+                                        minute: 'HH:mm'
                                     }
                                 },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
-                                }
-                            },
-                            plugins: {
                                 title: {
                                     display: true,
-                                    text: 'Home Team Odds History'
-                                },
-                                tooltip: {
-                                    mode: 'index',
-                                    intersect: false
-                                }
-                            }
-                        }
-                    });
-
-                    // Create away team chart
-                    const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
-                    awayChart = new Chart(awayCtx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: awayDatasets
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: false,
-                                    title: {
-                                        display: true,
-                                        text: 'Odds'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
-                                    }
+                                    text: 'Time'
                                 }
                             },
-                            plugins: {
+                            y: {
                                 title: {
                                     display: true,
-                                    text: 'Away Team Odds History'
-                                },
-                                tooltip: {
-                                    mode: 'index',
-                                    intersect: false
+                                    text: 'Odds'
                                 }
                             }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                            legend: {
+                                position: 'top'
+                            }
                         }
-                    });
-
-                    console.log('[DEBUG] Charts updated successfully');
-                })
-                .catch(error => {
-                    console.error('[ERROR] Failed to fetch odds history:', error);
+                    }
+                };
+                
+                // Create or update home team chart
+                const homeCtx = document.getElementById('homeOddsChart').getContext('2d');
+                if (homeChart) {
+                    homeChart.destroy();
+                }
+                homeChart = new Chart(homeCtx, {
+                    ...chartConfig,
+                    data: {
+                        labels: data.labels,
+                        datasets: homeDatasets
+                    }
                 });
+                
+                // Create or update away team chart
+                const awayCtx = document.getElementById('awayOddsChart').getContext('2d');
+                if (awayChart) {
+                    awayChart.destroy();
+                }
+                awayChart = new Chart(awayCtx, {
+                    ...chartConfig,
+                    data: {
+                        labels: data.labels,
+                        datasets: awayDatasets
+                    }
+                });
+                
+                console.log("[DEBUG] Charts created successfully");
+                
+            } catch (error) {
+                console.error("[ERROR] Failed to update charts:", error);
+            }
         }
 
-        // Helper function to generate random colors for bookmaker lines
+        // Helper function to generate random colors
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
             let color = '#';
@@ -370,16 +364,23 @@
             return color;
         }
 
-        // Initial data fetch
-        console.log('Starting initial data fetch...');
-        updateCharts();
+        // Initialize charts when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("[DEBUG] DOM loaded, initializing charts");
+            updateCharts();
+            
+            // Update charts every 10 minutes
+            setInterval(updateCharts, 600000);
+        });
 
-        // Set up interval to fetch new data every 10 minutes (600000 milliseconds)
-        const updateInterval = setInterval(updateCharts, 600000);
-
-        // Clean up interval when page is unloaded
-        window.addEventListener('beforeunload', function() {
-            clearInterval(updateInterval);
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (homeChart) {
+                homeChart.destroy();
+            }
+            if (awayChart) {
+                awayChart.destroy();
+            }
         });
     </script>
 </body>
