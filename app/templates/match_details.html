@@ -319,9 +319,7 @@
                                 title: {
                                     display: true,
                                     text: 'Time'
-                                },
-                                min: new Date(Date.now() - 60 * 60000).toISOString(), // 1 hour before
-                                max: new Date(Date.now() + 60 * 60000).toISOString()  // 1 hour after
+                                }
                             },
                             y: {
                                 title: {
@@ -405,11 +403,8 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: homeDatasets.map(dataset => ({
-                            ...dataset,
-                            pointBackgroundColor: dataset.borderColor,
-                            pointBorderColor: dataset.borderColor
-                        }))
+                        labels: data.labels,
+                        datasets: homeDatasets
                     }
                 });
                 
@@ -421,11 +416,8 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        datasets: awayDatasets.map(dataset => ({
-                            ...dataset,
-                            pointBackgroundColor: dataset.borderColor,
-                            pointBorderColor: dataset.borderColor
-                        }))
+                        labels: data.labels,
+                        datasets: awayDatasets
                     }
                 });
                 
