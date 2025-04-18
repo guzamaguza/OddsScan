@@ -1,302 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Match Details - {{ event.home_team }} vs {{ event.away_team }}</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --background-color: #f8f9fa;
-            --text-color: #2c3e50;
-            --border-color: #e9ecef;
-            --card-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            --header-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-        }
+// ... existing code ...
+                // Filter datasets for home and away teams
+                const homeDatasets = data.datasets.filter(dataset => 
+                    dataset.label.includes("{{ event.home_team }}")
+                ).map(dataset => ({
+                    ...dataset,
+                    data: dataset.data.map((value, index) => ({
+                        x: data.labels[index],
+                        y: value
+                    }))
+                }));
 
-        body {
-            font-family: 'Montserrat', 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: var(--header-gradient);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 2.8em;
-            text-align: center;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .header p {
-            text-align: center;
-            margin: 15px 0 0;
-            font-size: 1.2em;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .match-header {
-            text-align: center;
-            margin-bottom: 30px;
-            background-color: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .match-header h1 {
-            color: var(--primary-color);
-            font-size: 2em;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .match-header p {
-            color: var(--text-color);
-            margin: 5px 0;
-            font-size: 1.1em;
-        }
-
-        .odds-section, .score-section, .chart-section {
-            margin-bottom: 30px;
-            background-color: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .odds-section h2, .score-section h2, .chart-section h2 {
-            color: var(--primary-color);
-            margin-top: 0;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border-color);
-            font-size: 1.8em;
-            font-weight: 600;
-        }
-
-        .bookmaker {
-            margin-bottom: 15px;
-            padding: 20px;
-            background-color: var(--background-color);
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .bookmaker h3 {
-            color: var(--primary-color);
-            margin: 0 0 15px;
-            font-size: 1.4em;
-            font-weight: 600;
-        }
-
-        .bookmaker p {
-            margin: 5px 0;
-            color: var(--text-color);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 400px;
-            width: 100%;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background-color: var(--primary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background-color 0.3s ease;
-        }
-
-        .back-link:hover {
-            background-color: var(--secondary-color);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header {
-                padding: 30px 0;
-            }
-
-            .header h1 {
-                font-size: 2.2em;
-            }
-
-            .match-header h1 {
-                font-size: 1.8em;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-        <h1>Match Details</h1>
-            <p>{{ event.sport_title }}</p>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="match-header">
-            <h1>{{ event.home_team }} vs {{ event.away_team }}</h1>
-            <p>Time: {{ event.commence_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            <p>Sport: {{ event.sport_title }}</p>
-        </div>
-
-        {% if score %}
-        <div class="score-section">
-            <h2>Score</h2>
-            <p>Status: {{ 'Completed' if score.completed else 'In Progress' }}</p>
-            {% if score.scores %}
-                {% for team_score in score.scores %}
-                    <p>{{ team_score.name }}: {{ team_score.score }}</p>
-                {% endfor %}
-            {% else %}
-                <p>No score available yet</p>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="chart-section">
-            <h2>Odds History</h2>
-            <div style="margin-bottom: 20px; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">
-                <span style="color: rgb(0, 128, 0); font-weight: bold;">●</span> Current Time &nbsp;&nbsp;
-                <span style="color: rgb(255, 0, 0); font-weight: bold;">●</span> Game Start Time
-            </div>
-            <div class="chart-container">
-                <h3>{{ event.home_team }} Odds</h3>
-                <canvas id="homeOddsChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3>{{ event.away_team }} Odds</h3>
-                <canvas id="awayOddsChart"></canvas>
-            </div>
-        </div>
-
-        {% if event.bookmakers %}
-        <div class="odds-section">
-            <h2>Current Odds</h2>
-            {% for bookmaker in event.bookmakers %}
-                <div class="bookmaker">
-                    <h3>{{ bookmaker.title }}</h3>
-                    {% for market in bookmaker.markets %}
-                        {% if market.key == 'h2h' %}
-                            {% for outcome in market.outcomes %}
-                                <p>{{ outcome.name }}: {{ outcome.price }}</p>
-                            {% endfor %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <a href="{{ url_for('main.home') }}" class="back-link">Back to Matches</a>
-    </div>
-
-    <script>
-        // Global variables for chart instances
-        let homeChart = null;
-        let awayChart = null;
-        const eventId = "{{ event.uuid }}";
-
-        async function updateCharts() {
-            console.log("[DEBUG] Starting chart update for event:", eventId);
-            
-            try {
-                const response = await fetch(`/match/${eventId}/odds-history`);
-                console.log("[DEBUG] Fetch response status:", response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log("[DEBUG] Raw data received:", JSON.stringify(data, null, 2));
-                
-                // Check if we have valid data
-                if (!data.labels || data.labels.length === 0) {
-                    console.log("[DEBUG] No data points available");
-                    return;
-                }
-                
-                // Get all bookmaker names
-                const bookmakerNames = Object.keys(data.datasets.home);
-                console.log("[DEBUG] Bookmakers found:", bookmakerNames);
-                
-                if (bookmakerNames.length === 0) {
-                    console.log("[DEBUG] No bookmakers found in data");
-                    return;
-                }
-                
-                // Prepare datasets for home team
-                const homeDatasets = bookmakerNames.map(name => {
-                    const values = data.datasets.home[name];
-                    console.log(`[DEBUG] Home team data for ${name}:`, values);
-                    return {
-                        label: name,
-                        data: values.map((value, index) => ({
-                            x: data.labels[index],
-                            y: value
-                        })),
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        fill: false,
-                        tension: 0.1
-                    };
-                });
-                
-                // Prepare datasets for away team
-                const awayDatasets = bookmakerNames.map(name => {
-                    const values = data.datasets.away[name];
-                    console.log(`[DEBUG] Away team data for ${name}:`, values);
-                    return {
-                        label: name,
-                        data: values.map((value, index) => ({
-                            x: data.labels[index],
-                            y: value
-                        })),
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5,
-                        fill: false,
-                        tension: 0.1
-                    };
-                });
+                const awayDatasets = data.datasets.filter(dataset => 
+                    dataset.label.includes("{{ event.away_team }}")
+                ).map(dataset => ({
+                    ...dataset,
+                    data: dataset.data.map((value, index) => ({
+                        x: data.labels[index],
+                        y: value
+                    }))
+                }));
                 
                 console.log("[DEBUG] Home datasets:", homeDatasets);
                 console.log("[DEBUG] Away datasets:", awayDatasets);
@@ -403,7 +125,6 @@
                 homeChart = new Chart(homeCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels,
                         datasets: homeDatasets
                     }
                 });
@@ -416,46 +137,7 @@
                 awayChart = new Chart(awayCtx, {
                     ...chartConfig,
                     data: {
-                        labels: data.labels,
                         datasets: awayDatasets
                     }
                 });
-                
-                console.log("[DEBUG] Charts created successfully");
-                
-            } catch (error) {
-                console.error("[ERROR] Failed to update charts:", error);
-            }
-        }
-
-        // Helper function to generate random colors
-        function getRandomColor() {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        }
-
-        // Initialize charts when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("[DEBUG] DOM loaded, initializing charts");
-            updateCharts();
-            
-            // Update charts every 10 minutes
-            setInterval(updateCharts, 600000);
-        });
-
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-            if (homeChart) {
-                homeChart.destroy();
-            }
-            if (awayChart) {
-                awayChart.destroy();
-            }
-        });
-    </script>
-</body>
-</html>
+// ... existing code ...
