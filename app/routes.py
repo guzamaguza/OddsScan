@@ -80,22 +80,10 @@ def odds_history(uuid):
     print(f"[DEBUG] Found event: {event.uuid}")
     print(f"- Home Team: {event.home_team}")
     print(f"- Away Team: {event.away_team}")
-    print(f"- Current Bookmakers: {len(event.bookmakers) if event.bookmakers else 0}")
-    if event.bookmakers:
-        print(f"- Bookmaker details:")
-        for bookmaker in event.bookmakers:
-            print(f"  - {bookmaker.get('key', 'unknown')}: {len(bookmaker.get('markets', []))} markets")
-            for market in bookmaker.get('markets', []):
-                print(f"    - {market.get('key', 'unknown')}: {len(market.get('outcomes', []))} outcomes")
 
     # Get historical odds
     historical_odds = HistoricalOdds.query.filter_by(event_id=uuid).order_by(HistoricalOdds.created_at).all()
     print(f"[DEBUG] Found {len(historical_odds)} historical odds records")
-    if historical_odds:
-        print(f"- First historical record:")
-        first_history = historical_odds[0]
-        print(f"  - Created at: {first_history.created_at}")
-        print(f"  - Bookmakers: {len(first_history.bookmakers) if first_history.bookmakers else 0}")
 
     # Collect all unique bookmaker names
     bookmaker_names = set()
@@ -112,10 +100,7 @@ def odds_history(uuid):
     # Initialize chart data structure
     chart_data = {
         "labels": [],  # Timestamps
-        "datasets": {
-            "home": {name: [] for name in bookmaker_names},
-            "away": {name: [] for name in bookmaker_names}
-        }
+        "datasets": []
     }
 
     # Process historical odds
@@ -138,10 +123,22 @@ def odds_history(uuid):
                 for outcome in market["outcomes"]:
                     try:
                         price = float(outcome["price"])
-                        if outcome["name"] == event.home_team:
-                            chart_data["datasets"]["home"][bookmaker["key"]].append(price)
-                        elif outcome["name"] == event.away_team:
-                            chart_data["datasets"]["away"][bookmaker["key"]].append(price)
+                        # Add to appropriate dataset
+                        dataset_name = f"{bookmaker['key']} - {outcome['name']}"
+                        dataset = next((d for d in chart_data["datasets"] if d["label"] == dataset_name), None)
+                        
+                        if not dataset:
+                            dataset = {
+                                "label": dataset_name,
+                                "data": [],
+                                "borderColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
+                                "backgroundColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
+                                "fill": False,
+                                "tension": 0.1
+                            }
+                            chart_data["datasets"].append(dataset)
+                        
+                        dataset["data"].append(price)
                     except (ValueError, KeyError) as e:
                         print(f"[WARNING] Invalid price value for {bookmaker['key']}: {e}")
 
@@ -161,25 +158,36 @@ def odds_history(uuid):
                 for outcome in market["outcomes"]:
                     try:
                         price = float(outcome["price"])
-                        if outcome["name"] == event.home_team:
-                            chart_data["datasets"]["home"][bookmaker["key"]].append(price)
-                        elif outcome["name"] == event.away_team:
-                            chart_data["datasets"]["away"][bookmaker["key"]].append(price)
+                        # Add to appropriate dataset
+                        dataset_name = f"{bookmaker['key']} - {outcome['name']}"
+                        dataset = next((d for d in chart_data["datasets"] if d["label"] == dataset_name), None)
+                        
+                        if not dataset:
+                            dataset = {
+                                "label": dataset_name,
+                                "data": [],
+                                "borderColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
+                                "backgroundColor": f"hsl({len(chart_data['datasets']) * 30}, 50%, 50%)",
+                                "fill": False,
+                                "tension": 0.1
+                            }
+                            chart_data["datasets"].append(dataset)
+                        
+                        dataset["data"].append(price)
                     except (ValueError, KeyError) as e:
                         print(f"[WARNING] Invalid price value for {bookmaker['key']}: {e}")
 
-    # Ensure all arrays have the same length
+    # Ensure all datasets have the same length
     max_length = len(chart_data["labels"])
-    for team in ["home", "away"]:
-        for bookmaker in bookmaker_names:
-            while len(chart_data["datasets"][team][bookmaker]) < max_length:
-                chart_data["datasets"][team][bookmaker].append(None)
+    for dataset in chart_data["datasets"]:
+        while len(dataset["data"]) < max_length:
+            dataset["data"].append(None)
 
     print(f"[DEBUG] Generated chart data:")
     print(f"- Timestamps: {len(chart_data['labels'])}")
-    print(f"- Sample home odds: {[chart_data['datasets']['home'][name][-1] for name in bookmaker_names]}")
-    print(f"- Sample away odds: {[chart_data['datasets']['away'][name][-1] for name in bookmaker_names]}")
-    print(f"- Full chart data structure: {chart_data}")
+    print(f"- Datasets: {len(chart_data['datasets'])}")
+    for dataset in chart_data["datasets"]:
+        print(f"- {dataset['label']}: {len(dataset['data'])} points")
 
     return jsonify(chart_data)
 
