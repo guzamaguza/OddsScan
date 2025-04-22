@@ -4,7 +4,7 @@ from app.models import OddsEvent, Score, HistoricalOdds
 from sqlalchemy import func, desc
 from app import db
 
-main = Blueprint("main", __name__)
+main = Blueprint('main', __name__)
 
 @main.route('/')
 def home():
@@ -15,173 +15,147 @@ def home():
         OddsEvent.commence_time > (now - timedelta(days=1))
     ).order_by(desc(OddsEvent.commence_time)).all()
     
-    # Group events by sport
-    events_by_sport = {}
-    for event in events:
-        if event.sport_title not in events_by_sport:
-            events_by_sport[event.sport_title] = []
-        events_by_sport[event.sport_title].append(event)
+    # Remove duplicates based on event ID
+    def remove_duplicates(events):
+        seen = set()
+        unique_events = []
+        for event in events:
+            if event.id not in seen:
+                seen.add(event.id)
+                unique_events.append(event)
+        return unique_events
+    
+    # Remove duplicates and sort by time
+    events = sorted(remove_duplicates(events), key=lambda x: x.commence_time, reverse=True)
+    
+    # Debug logging
+    print(f"Current time (UTC): {now}")
+    print(f"Total events count: {len(events)}")
     
     return render_template('home.html', 
-                         events_by_sport=events_by_sport,
+                         events=events,
                          now=now)
 
 @main.route("/match/<uuid>")
 def match_details(uuid):
-    # Get the event and its associated score
-    event = OddsEvent.query.get_or_404(uuid)
+    event = OddsEvent.query.filter_by(uuid=uuid).first_or_404()
     score = Score.query.filter_by(event_id=uuid).first()
-    
-    return render_template('match_details.html', 
-                         event=event,
-                         score=score)
+    return render_template('match_details.html', event=event, score=score)
 
 @main.route("/match/<uuid>/odds-history")
 def odds_history(uuid):
-    """Get historical odds data for a specific event"""
-    from app.models import OddsEvent, HistoricalOdds
-    from datetime import datetime, timezone
-
-    print(f"\n[DEBUG] Fetching odds history for event: {uuid}")
+    event = OddsEvent.query.filter_by(uuid=uuid).first_or_404()
     
-    # Get the event
-    event = OddsEvent.query.filter_by(uuid=uuid).first()
-    if not event:
-        print(f"[ERROR] Event {uuid} not found")
-        return jsonify({"error": "Event not found"}), 404
-
-    print(f"[DEBUG] Found event: {event.uuid}")
-    print(f"- Home Team: {event.home_team}")
-    print(f"- Away Team: {event.away_team}")
-
-    # Get historical odds
+    # Get historical odds for this event
     historical_odds = HistoricalOdds.query.filter_by(event_id=uuid).order_by(HistoricalOdds.created_at).all()
-    print(f"[DEBUG] Found {len(historical_odds)} historical odds records")
-
-    # Initialize chart data structure
+    
+    # Get unique bookmaker names from both current and historical odds
+    bookmaker_names = set()
+    if event.bookmakers:
+        for bookmaker in event.bookmakers:
+            bookmaker_names.add(bookmaker['title'])
+    
+    for historical in historical_odds:
+        if historical.bookmakers:
+            for bookmaker in historical.bookmakers:
+                bookmaker_names.add(bookmaker['title'])
+    
+    # Prepare chart data
     chart_data = {
-        "labels": [],  # Timestamps
-        "datasets": []  # List of datasets
+        'labels': [],  # Timestamps
+        'datasets': []  # Bookmaker odds
     }
-
-    # Process historical odds
-    for history in historical_odds:
-        if not history.bookmakers:
-            continue
-            
-        timestamp = history.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        chart_data["labels"].append(timestamp)
-        
-        # Process each bookmaker's odds
-        for bookmaker in history.bookmakers:
-            for market in bookmaker["markets"]:
-                if market["key"] != "h2h":
-                    continue
-                    
-                for outcome in market["outcomes"]:
-                    try:
-                        price = float(outcome["price"])
-                        # Add to appropriate dataset
-                        dataset_name = f"{bookmaker['key']} - {outcome['name']}"
-                        dataset = next((d for d in chart_data["datasets"] if d["label"] == dataset_name), None)
-                        
-                        if not dataset:
-                            dataset = {
-                                "label": dataset_name,
-                                "data": [],
-                                "borderColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
-                                "backgroundColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
-                                "fill": False,
-                                "tension": 0.1,
-                                "pointRadius": 6,
-                                "pointHoverRadius": 8,
-                                "pointBackgroundColor": "white",
-                                "pointBorderWidth": 2
-                            }
-                            chart_data["datasets"].append(dataset)
-                        
-                        dataset["data"].append(price)
-                    except (ValueError, KeyError) as e:
-                        print(f"[WARNING] Invalid price value for {bookmaker['key']}: {e}")
-
+    
     # Add current odds
     if event.bookmakers:
-        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        chart_data["labels"].append(current_time)
-        
         for bookmaker in event.bookmakers:
-            for market in bookmaker["markets"]:
-                if market["key"] != "h2h":
-                    continue
-                    
-                for outcome in market["outcomes"]:
-                    try:
-                        price = float(outcome["price"])
-                        # Add to appropriate dataset
-                        dataset_name = f"{bookmaker['key']} - {outcome['name']}"
-                        dataset = next((d for d in chart_data["datasets"] if d["label"] == dataset_name), None)
-                        
-                        if not dataset:
-                            dataset = {
-                                "label": dataset_name,
-                                "data": [],
-                                "borderColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
-                                "backgroundColor": f"hsl({len(chart_data['datasets']) * 30}, 70%, 50%)",
-                                "fill": False,
-                                "tension": 0.1,
-                                "pointRadius": 6,
-                                "pointHoverRadius": 8,
-                                "pointBackgroundColor": "white",
-                                "pointBorderWidth": 2
-                            }
-                            chart_data["datasets"].append(dataset)
-                        
-                        dataset["data"].append(price)
-                    except (ValueError, KeyError) as e:
-                        print(f"[WARNING] Invalid price value for {bookmaker['key']}: {e}")
-
-    # Ensure all datasets have the same length
-    max_length = len(chart_data["labels"])
-    for dataset in chart_data["datasets"]:
-        while len(dataset["data"]) < max_length:
-            dataset["data"].append(None)
-
-    print(f"[DEBUG] Generated chart data:")
-    print(f"- Timestamps: {len(chart_data['labels'])}")
-    print(f"- Datasets: {len(chart_data['datasets'])}")
-    for dataset in chart_data["datasets"]:
-        print(f"- {dataset['label']}: {len(dataset['data'])} points")
-
+            if 'markets' in bookmaker and bookmaker['markets']:
+                for market in bookmaker['markets']:
+                    if market['key'] == 'h2h' and 'outcomes' in market:
+                        for outcome in market['outcomes']:
+                            if outcome['name'] == event.home_team:
+                                chart_data['labels'].append(event.updated_at.isoformat() if event.updated_at else event.commence_time.isoformat())
+                                chart_data['datasets'].append({
+                                    'label': f"{bookmaker['title']} - {event.home_team}",
+                                    'data': [outcome['price']],
+                                    'borderColor': 'rgba(75, 192, 192, 1)',
+                                    'backgroundColor': 'rgba(75, 192, 192, 0.2)'
+                                })
+                            elif outcome['name'] == event.away_team:
+                                chart_data['labels'].append(event.updated_at.isoformat() if event.updated_at else event.commence_time.isoformat())
+                                chart_data['datasets'].append({
+                                    'label': f"{bookmaker['title']} - {event.away_team}",
+                                    'data': [outcome['price']],
+                                    'borderColor': 'rgba(255, 99, 132, 1)',
+                                    'backgroundColor': 'rgba(255, 99, 132, 0.2)'
+                                })
+    
+    # Add historical odds
+    for historical in historical_odds:
+        if historical.bookmakers:
+            for bookmaker in historical.bookmakers:
+                if 'markets' in bookmaker and bookmaker['markets']:
+                    for market in bookmaker['markets']:
+                        if market['key'] == 'h2h' and 'outcomes' in market:
+                            for outcome in market['outcomes']:
+                                if outcome['name'] == event.home_team:
+                                    chart_data['labels'].append(historical.created_at.isoformat())
+                                    chart_data['datasets'].append({
+                                        'label': f"{bookmaker['title']} - {event.home_team}",
+                                        'data': [outcome['price']],
+                                        'borderColor': 'rgba(75, 192, 192, 1)',
+                                        'backgroundColor': 'rgba(75, 192, 192, 0.2)'
+                                    })
+                                elif outcome['name'] == event.away_team:
+                                    chart_data['labels'].append(historical.created_at.isoformat())
+                                    chart_data['datasets'].append({
+                                        'label': f"{bookmaker['title']} - {event.away_team}",
+                                        'data': [outcome['price']],
+                                        'borderColor': 'rgba(255, 99, 132, 1)',
+                                        'backgroundColor': 'rgba(255, 99, 132, 0.2)'
+                                    })
+    
     return jsonify(chart_data)
 
 @main.route("/events")
 def events():
-    # Return a list of all events' ids as JSON
-    from app.models import OddsEvent
-    return {"events": [e.id for e in OddsEvent.query.all()]}
+    now = datetime.utcnow()
+    events = OddsEvent.query.filter(
+        OddsEvent.commence_time > (now - timedelta(days=1))
+    ).order_by(desc(OddsEvent.commence_time)).all()
+    return jsonify([{
+        'uuid': event.uuid,
+        'id': event.id,
+        'sport_title': event.sport_title,
+        'commence_time': event.commence_time.isoformat(),
+        'home_team': event.home_team,
+        'away_team': event.away_team,
+        'bookmakers': event.bookmakers
+    } for event in events])
 
 @main.route("/debug/events")
 def debug_events():
-    events = OddsEvent.query.order_by(OddsEvent.commence_time.asc()).all()
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
+    events = OddsEvent.query.filter(
+        OddsEvent.commence_time > (now - timedelta(days=1))
+    ).order_by(desc(OddsEvent.commence_time)).all()
     
-    event_data = []
+    debug_info = []
     for event in events:
-        event_data.append({
+        score = Score.query.filter_by(event_id=event.uuid).first()
+        debug_info.append({
+            'uuid': event.uuid,
             'id': event.id,
+            'sport_title': event.sport_title,
+            'commence_time': event.commence_time.isoformat(),
             'home_team': event.home_team,
             'away_team': event.away_team,
-            'commence_time': event.commence_time.strftime('%Y-%m-%d %H:%M:%S UTC'),
-            'created_at': event.created_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
-            'is_past': event.commence_time < (now - timedelta(hours=2)),
-            'is_ongoing': (event.commence_time <= now and event.commence_time > (now - timedelta(hours=2))),
-            'is_upcoming': event.commence_time > now
+            'bookmakers_count': len(event.bookmakers) if event.bookmakers else 0,
+            'score': score.scores if score else None,
+            'completed': score.completed if score else False
         })
     
-    return jsonify({
-        'current_time': now.strftime('%Y-%m-%d %H:%M:%S UTC'),
-        'events': event_data
-    })
+    return jsonify(debug_info)
 
 @main.route("/debug/database")
 def debug_database():
