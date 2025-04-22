@@ -1,57 +1,30 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from datetime import datetime, timedelta, timezone
 from app.models import OddsEvent, Score, HistoricalOdds
-from sqlalchemy import func
+from sqlalchemy import func, desc
 from app import db
 
 main = Blueprint("main", __name__)
 
 @main.route('/')
 def home():
-    # Get current time in UTC
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     
-    # Get past events (completed more than 2 hours ago)
-    past_events = OddsEvent.query.filter(
-        OddsEvent.commence_time < (now - timedelta(hours=2))
-    ).order_by(OddsEvent.commence_time.desc()).all()
+    # Get all events from the last 24 hours
+    events = OddsEvent.query.filter(
+        OddsEvent.commence_time > (now - timedelta(days=1))
+    ).order_by(desc(OddsEvent.commence_time)).all()
     
-    # Get ongoing events (started but not completed)
-    ongoing_events = OddsEvent.query.filter(
-        OddsEvent.commence_time <= now,
-        OddsEvent.commence_time > (now - timedelta(hours=2))
-    ).order_by(OddsEvent.commence_time.asc()).all()
-    
-    # Get upcoming events (not started yet)
-    upcoming_events = OddsEvent.query.filter(
-        OddsEvent.commence_time > now
-    ).order_by(OddsEvent.commence_time.asc()).all()
-    
-    # Remove duplicates based on event ID
-    def remove_duplicates(events):
-        seen = set()
-        unique_events = []
-        for event in events:
-            if event.id not in seen:
-                seen.add(event.id)
-                unique_events.append(event)
-        return unique_events
-    
-    # Remove duplicates and sort each category
-    past_events = sorted(remove_duplicates(past_events), key=lambda x: x.commence_time, reverse=True)
-    ongoing_events = sorted(remove_duplicates(ongoing_events), key=lambda x: x.commence_time)
-    upcoming_events = sorted(remove_duplicates(upcoming_events), key=lambda x: x.commence_time)
-    
-    # Debug logging
-    print(f"Current time (UTC): {now}")
-    print(f"Past events count: {len(past_events)}")
-    print(f"Ongoing events count: {len(ongoing_events)}")
-    print(f"Upcoming events count: {len(upcoming_events)}")
+    # Group events by sport
+    events_by_sport = {}
+    for event in events:
+        if event.sport_title not in events_by_sport:
+            events_by_sport[event.sport_title] = []
+        events_by_sport[event.sport_title].append(event)
     
     return render_template('home.html', 
-                         past_events=past_events,
-                         ongoing_events=ongoing_events,
-                         upcoming_events=upcoming_events)
+                         events_by_sport=events_by_sport,
+                         now=now)
 
 @main.route("/match/<uuid>")
 def match_details(uuid):
