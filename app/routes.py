@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from app.models import OddsEvent, Score, HistoricalOdds
 from sqlalchemy import func, desc
 from app import db
+import uuid
 
 main = Blueprint('main', __name__)
 
@@ -14,6 +15,32 @@ def home():
     events = OddsEvent.query.filter(
         OddsEvent.commence_time > (now - timedelta(days=1))
     ).order_by(desc(OddsEvent.commence_time)).all()
+    
+    # If no events found, create some mock events
+    if not events:
+        print("[INFO] No events found in database. Creating mock events.")
+        from app.fetch_data import generate_mock_odds
+        mock_data = generate_mock_odds()
+        for event_data in mock_data:
+            event = OddsEvent(
+                uuid=str(uuid.uuid4()),
+                id=event_data['id'],
+                sport_key=event_data['sport_key'],
+                sport_title=event_data['sport_title'],
+                commence_time=datetime.fromisoformat(event_data['commence_time'].replace('Z', '+00:00')),
+                home_team=event_data['home_team'],
+                away_team=event_data['away_team'],
+                bookmakers=event_data['bookmakers']
+            )
+            db.session.add(event)
+        try:
+            db.session.commit()
+            events = OddsEvent.query.filter(
+                OddsEvent.commence_time > (now - timedelta(days=1))
+            ).order_by(desc(OddsEvent.commence_time)).all()
+        except Exception as e:
+            print(f"[ERROR] Failed to create mock events: {e}")
+            db.session.rollback()
     
     # Remove duplicates based on event ID
     def remove_duplicates(events):
