@@ -5,6 +5,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
 import uuid
 from flask import current_app
+from app import db
+from app.models import OddsEvent, Score, HistoricalOdds
 
 API_KEY = os.getenv("ODDS_API_KEY")
 BASE_URL = "https://api.the-odds-api.com/v4"
