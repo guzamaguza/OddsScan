@@ -5,13 +5,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
 import uuid
 from flask import current_app
-from app import db
 from app.models import OddsEvent, Score, HistoricalOdds
 
 API_KEY = os.getenv("ODDS_API_KEY")
 BASE_URL = "https://api.the-odds-api.com/v4"
 
-def fetch_odds():
+def fetch_odds(db):
     """Fetch odds data from the API and store in database"""
     api_key = current_app.config['ODDS_API_KEY']
     regions = 'us'  # Only US odds
@@ -90,8 +89,6 @@ def fetch_odds():
 
 def fetch_scores(db):
     """Fetch and store scores data from the API"""
-    from app.models import OddsEvent, Score
-
     url = f"{BASE_URL}/sports/basketball_nba/scores"
     params = {
         "daysFrom": 1,
@@ -156,7 +153,6 @@ def fetch_scores(db):
 def fetch_all_data(db):
     """Fetch both odds and scores data"""
     print("[INFO] Starting data fetch...")
-    fetch_odds()
+    fetch_odds(db)
     fetch_scores(db)
     print("[INFO] Data fetch completed")
-
