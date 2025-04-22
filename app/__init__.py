@@ -27,13 +27,13 @@ def create_app():
         db.create_all()
         print("[INFO] Database tables created")
         from app.fetch_data import fetch_all_data
-        fetch_all_data()  # Fetch both odds and scores on startup
+        fetch_all_data(db)  # Fetch both odds and scores on startup
 
     # Set up APScheduler to run fetch_all_data every 10 minutes
     def scheduled_job():
         print("[INFO] Scheduled job triggered")
         with app.app_context():
-            fetch_all_data()
+            fetch_all_data(db)
 
     scheduler = BackgroundScheduler(daemon=True)
     scheduler.add_job(func=scheduled_job, trigger="interval", minutes=10)
