@@ -3,92 +3,109 @@ import os
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import and_
-import uuid
-from flask import current_app
-from app.models import OddsEvent, Score, HistoricalOdds
 
 API_KEY = os.getenv("ODDS_API_KEY")
 BASE_URL = "https://api.the-odds-api.com/v4"
 
 def fetch_odds(db):
-    """Fetch odds data from the API and store in database"""
-    api_key = current_app.config['ODDS_API_KEY']
-    regions = 'us'  # Only US odds
-    markets = 'h2h'  # Only head-to-head markets
+    """Fetch and store odds data from the API"""
+    from app.models import OddsEvent, HistoricalOdds
+
+    # Get current time in UTC
+    now = datetime.now(timezone.utc)
     
+    # Get odds for upcoming games
+    url = f"{BASE_URL}/sports/basketball_nba/odds"
+    params = {
+        "regions": "us",
+        "markets": "h2h",
+        "oddsFormat": "decimal",
+        "apiKey": API_KEY,
+    }
+
     try:
-        # Fetch NBA odds
-        response = requests.get(
-            f'https://api.the-odds-api.com/v4/sports/basketball_nba/odds',
-            params={
-                'apiKey': api_key,
-                'regions': regions,
-                'markets': markets
-            }
-        )
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
         
-        if response.status_code != 200:
-            print("Error fetching NBA odds:", response.text)
+        if not data:
+            print("[INFO] No odds data returned from API")
             return
-            
-        odds_data = response.json()
-        print(f"Fetched {len(odds_data)} NBA events")
-        
-        for event_data in odds_data:
+
+        print(f"[INFO] Fetched {len(data)} odds events")
+
+        for event in data:
             try:
                 # Check if event already exists
-                existing_event = OddsEvent.query.filter_by(id=event_data['id']).first()
+                existing_event = OddsEvent.query.filter_by(id=event["id"]).first()
                 
                 if existing_event:
+                    print(f"[INFO] Processing existing event: {existing_event.uuid}")
+                    print(f"- Home Team: {existing_event.home_team}")
+                    print(f"- Away Team: {existing_event.away_team}")
+                    print(f"- Current Bookmakers: {len(existing_event.bookmakers) if existing_event.bookmakers else 0}")
+                    
                     # Store current odds as historical data before updating
                     if existing_event.bookmakers:
+                        print(f"[INFO] Storing historical odds for event {existing_event.uuid}")
                         historical_odds = HistoricalOdds(
                             event_id=existing_event.uuid,
                             bookmakers=existing_event.bookmakers,
                             created_at=datetime.now(timezone.utc)
                         )
                         db.session.add(historical_odds)
+                        print(f"[INFO] Added historical odds record")
                     
                     # Update existing event
-                    existing_event.bookmakers = event_data['bookmakers']
-                    existing_event.updated_at = datetime.now(timezone.utc)
+                    existing_event.bookmakers = event["bookmakers"]
+                    print(f"[INFO] Updated existing OddsEvent: {existing_event.uuid}")
+                    print(f"- New Bookmakers: {len(event['bookmakers'])}")
                 else:
                     # Create new event
+                    print(f"[INFO] Creating new event")
                     new_event = OddsEvent(
-                        uuid=str(uuid.uuid4()),
-                        id=event_data['id'],
-                        sport_key=event_data['sport_key'],
-                        sport_title=event_data['sport_title'],
-                        commence_time=datetime.fromisoformat(event_data['commence_time'].replace('Z', '+00:00')),
-                        home_team=event_data['home_team'],
-                        away_team=event_data['away_team'],
-                        bookmakers=event_data['bookmakers']
+                        id=event["id"],
+                        sport_key=event["sport_key"],
+                        sport_title=event["sport_title"],
+                        commence_time=datetime.strptime(event["commence_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                        home_team=event["home_team"],
+                        away_team=event["away_team"],
+                        bookmakers=event["bookmakers"]
                     )
                     db.session.add(new_event)
-                    db.session.flush()  # Get the UUID for historical odds
+                    db.session.flush()  # Get the UUID for the new event
                     
-                    # Store initial odds as historical data
+                    # Store initial historical odds for new event
+                    print(f"[INFO] Storing initial historical odds for new event {new_event.uuid}")
                     historical_odds = HistoricalOdds(
                         event_id=new_event.uuid,
-                        bookmakers=event_data['bookmakers'],
+                        bookmakers=event["bookmakers"],
                         created_at=datetime.now(timezone.utc)
                     )
                     db.session.add(historical_odds)
-            
+                    
+                    print(f"[INFO] Created new OddsEvent: {new_event.uuid}")
+                    print(f"- Home Team: {new_event.home_team}")
+                    print(f"- Away Team: {new_event.away_team}")
+                    print(f"- Bookmakers: {len(event['bookmakers'])}")
+
             except Exception as e:
-                print(f"Error processing event {event_data.get('id', 'unknown')}: {str(e)}")
+                print(f"[ERROR] Failed to process odds event {event.get('id', 'unknown')}: {e}")
                 db.session.rollback()
-                continue
-        
+
         db.session.commit()
-        print("Successfully processed NBA odds")
+        print("[INFO] Database changes committed")
         
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Failed to fetch odds data: {e}")
     except Exception as e:
-        print("Error processing NBA odds:", str(e))
+        print(f"[ERROR] Unexpected error in fetch_odds: {e}")
         db.session.rollback()
 
 def fetch_scores(db):
     """Fetch and store scores data from the API"""
+    from app.models import OddsEvent, Score
+
     url = f"{BASE_URL}/sports/basketball_nba/scores"
     params = {
         "daysFrom": 1,
